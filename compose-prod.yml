@@ -1,0 +1,50 @@
+---
+services:
+
+  dj4h-db:
+    image: mariadb:11.4.2
+    container_name: dj4h-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: $DB_NAME
+      MARIADB_USER: $DB_USER
+      MARIADB_PASSWORD: $DB_PASSWORD
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+    expose:
+      - 3306
+    volumes:
+      - dj4h-db:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dj4h-net
+
+  dj4h-bot:
+    image: ghcr.io/gravendev/dj4h:latest
+    container_name: dj4h-bot
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: $BOT_TOKEN
+      # DEBUG_GUILD_ID:
+      DATABASE_NAME: $DB_NAME
+      DATABASE_USER: $DB_USER
+      DATABASE_PASSWORD: $DB_PASSWORD
+      DATABASE_HOST: dj4h-db
+      DATABASE_PORT: 3306
+    depends_on:
+      dj4h-db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - dj4h-net
+
+networks:
+  dj4h-net:
+
+volumes:
+  dj4h-db:
+...
