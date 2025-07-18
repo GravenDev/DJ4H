@@ -6,7 +6,7 @@ on:
 
 env:
     REGISTRY: ghcr.io
-    OWNER: ${{ github.repository_owner }}
+    OWNER: gravendev
     NAME: dj4h
 
 jobs:
