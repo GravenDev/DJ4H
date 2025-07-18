@@ -1,0 +1,26 @@
+services:
+    dj4h:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: dj4h
+        env_file:
+            - .env
+
+    db-dj4h:
+        image: mariadb:11.4.2
+        container_name: db-dj4h
+        env_file:
+            - .db.env
+        ports:
+            - "3306:3306"
+        volumes:
+            - dj4h:/var/lib/mysql
+        healthcheck:
+            test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+            interval: 1s
+            timeout: 5s
+            retries: 10
+
+volumes:
+    dj4h:

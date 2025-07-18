@@ -1,0 +1,11 @@
+.venv/
+logs/
+.db.env
+.db.env.example
+.env
+.env.example
+.gitignore
+compose.yaml
+README.md
+Dockerfile
+.dockerignore

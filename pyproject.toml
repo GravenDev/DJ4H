@@ -1,0 +1,22 @@
+[project]
+name = "dj4h"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Gamingdy" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "py-cord (==2.6.1)",
+    "mariadb (==1.1.13)",
+    "python-dotenv (==1.1.1)",
+    "sqlalchemy (==2.0.41)",
+    "pillow (>=11.3.0,<12.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+black = "25.1.0"
