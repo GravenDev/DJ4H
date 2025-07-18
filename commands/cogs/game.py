@@ -45,7 +45,7 @@ class Game(commands.Cog):
 
     @slash_command()
     async def leaderboard(self, ctx) -> None:
-        """Start the game."""
+        """Show game leaderboard."""
         if not ctx.guild:
             return
 
