@@ -16,7 +16,7 @@
     },
     "file": {
       "class": "logging.handlers.TimedRotatingFileHandler",
-      "level": "DEBUG",
+      "level": "INFO",
       "formatter": "simple",
       "filename": "logs/bot.log",
       "backupCount": 30,
