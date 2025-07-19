@@ -1,5 +1,7 @@
-.venv/
-logs/
+.github
+.venv
+logs
+.idea
 .db.env
 .db.env.example
 .env
@@ -8,4 +10,3 @@ logs/
 compose.yaml
 README.md
 Dockerfile
-.dockerignore

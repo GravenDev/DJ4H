@@ -13,7 +13,10 @@ WORKDIR /app
 
 COPY ./ /app
 
-RUN poetry install
+# Disable in-project venvs
+RUN poetry config virtualenvs.in-project false
+
+RUN poetry install --without dev
 
 RUN chmod +x entrypoint.sh
 
