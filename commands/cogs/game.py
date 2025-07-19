@@ -46,6 +46,7 @@ class Game(commands.Cog):
     @slash_command()
     async def leaderboard(self, ctx) -> None:
         """Show game leaderboard."""
+        await ctx.defer()  # Defer the response to allow for longer processing time
         if not ctx.guild:
             return
 
