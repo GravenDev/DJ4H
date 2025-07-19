@@ -5,7 +5,7 @@ from utils.database.connection import Base, engine
 
 setup_logging()
 
-bot = discord.Bot(
+bot = discord.AutoShardedBot(
     intents=discord.Intents.default(),
     help_command=None,  # Disable the default help command
     debug_guilds=[DEBUG_GUILD_ID] if DEBUG_GUILD_ID else None,

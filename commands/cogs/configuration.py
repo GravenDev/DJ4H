@@ -112,10 +112,11 @@ class Configuration(commands.Cog):
             return
         with open(log_file, "rb") as f:
             # send to private message
-            await ctx.author.send(
-                "Here is the log file:", file=discord.File(f, "bot.log")
+            await ctx.respond(
+                "Here is the log file:",
+                file=discord.File(f, "bot.log"),
+                ephemeral=True,
             )
-        await ctx.respond("Log file sent to your private messages.")
 
 
 def setup(bot):
