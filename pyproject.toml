@@ -19,4 +19,4 @@ dependencies = [
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-black = "25.12.0"
+black = "26.3.1"
