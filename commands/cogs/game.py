@@ -66,20 +66,20 @@ class Game(commands.Cog):
         await ctx.respond(file=file)
 
     @slash_command()
-    async def score(self, ctx) -> None:
+    async def score(self, ctx, member:discord.Member=None) -> None:
         """Check your score."""
         if not ctx.guild:
             return
-
-        user = await UserDao.get_user(ctx.author.id, ctx.guild.id)
+        user_id = member.id if member else ctx.author.id
+        user = await UserDao.get_user(user_id, ctx.guild.id)
 
         if user is None:
-            await ctx.respond("You have no score in this guild.")
+            await ctx.respond(f"<@{user_id}>'s have no score in this guild.")
             return
 
         embed = discord.Embed(
             title="🎪 Le jeu des 4h",
-            description=f"Votre score est **{user.score}**",
+            description=f"Le score de <@{user_id}> est **{user.score}**",
             colour=discord.Colour(5220337),
         )
 
