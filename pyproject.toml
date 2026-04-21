@@ -11,7 +11,7 @@ dependencies = [
     "py-cord (==2.7.0)",
     "python-dotenv (==1.2.1)",
     "pillow (==12.1.0)",
-    "sqlalchemy[asyncio] (==2.0.45)",
+    "sqlalchemy[asyncio] (==2.0.49)",
     "aiosqlite (==0.22.1)",
 ]
 
