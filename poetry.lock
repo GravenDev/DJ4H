@@ -958,24 +958,24 @@ files = [
 
 [[package]]
 name = "py-cord"
-version = "2.7.2"
+version = "2.8.0"
 description = "A Python wrapper for the Discord API"
 optional = false
-python-versions = "<3.14,>=3.10"
+python-versions = "<3.15,>=3.10"
 groups = ["main"]
 files = [
-    {file = "py_cord-2.7.2-py3-none-any.whl", hash = "sha256:e25e5e9392f297b3d8fb8f9f31e57989276c1e2b12ebed5a7b1040dd5891d972"},
-    {file = "py_cord-2.7.2.tar.gz", hash = "sha256:86d2172c5b0de33d3aa5611d940dd98acfb1b95adfa10ae7b749e6aaf923ffff"},
+    {file = "py_cord-2.8.0-py3-none-any.whl", hash = "sha256:24f9180b4df432ddef732e388a905aa7d9cdf8f2f26318f18a193bccb2d7f642"},
+    {file = "py_cord-2.8.0.tar.gz", hash = "sha256:57a7efefa80e7f6ef890fbfc054d686782c347c9e4d86fa7c91f7ae5285b353f"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.6.0,<4.0"
+aiohttp = ">=3.13.2,<4.0"
 typing_extensions = ">=4.12.0,<5"
 
 [package.extras]
-docs = ["furo (==2025.12.19)", "levenshtein (==0.27.3)", "myst-parser[linkify] (==5.0.0)", "sphinx (==9.1.0)", "sphinx-autodoc-typehints (==3.6.2)", "sphinx-copybutton (==0.5.2)", "sphinx-intl (==2.3.2)", "sphinxcontrib-websupport (==2.0.0)", "sphinxcontrib_trio (==1.2.0)", "sphinxext-opengraph (==0.13.0)", "typing_extensions (==4.15.0)"]
-speed = ["aiohttp[speedups]", "msgspec (>=0.20.0,<0.21.0)"]
-voice = ["PyNaCl (>=1.6,<1.7)"]
+docs = ["furo (==2025.12.19) ; python_version >= \"3.13\"", "levenshtein (==0.27.3) ; python_version >= \"3.13\"", "myst-parser[linkify] (==5.1.0) ; python_version >= \"3.13\"", "sphinx (==9.1.0) ; python_version >= \"3.13\"", "sphinx-autodoc-typehints (==3.10.2) ; python_version >= \"3.13\"", "sphinx-copybutton (==0.5.2) ; python_version >= \"3.13\"", "sphinx-intl (==2.3.2) ; python_version >= \"3.13\"", "sphinxcontrib-websupport (==2.0.0) ; python_version >= \"3.13\"", "sphinxcontrib_trio (==1.2.0) ; python_version >= \"3.13\"", "sphinxext-opengraph (==0.13.0) ; python_version >= \"3.13\"", "typing_extensions (==4.15.0) ; python_version >= \"3.13\""]
+speed = ["aiohttp[speedups]", "msgspec (>=0.21.0,<0.22.0)"]
+voice = ["PyNaCl (>=1.6,<1.7)", "davey (>=0.1.4,<1)"]
 
 [[package]]
 name = "python-dotenv"
@@ -1307,4 +1307,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13"
-content-hash = "68dde5cd9ad7cb40a1304606da8c688dce312b560470b91703f90e0c631ef90e"
+content-hash = "11239161e40ba73765654f66646396cfd61b4299ab8b19ca83815285187fa9bf"
