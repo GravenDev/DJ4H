@@ -1,3 +1,3 @@
 #!/bin/sh
-alembic upgrade head
+poetry run alembic upgrade head
 poetry run python main.py
