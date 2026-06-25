@@ -6,14 +6,26 @@ from utils.database.dao.rngdle import RNGdleDao
 from utils.rngdle import RNGdle as RNGdleClient
 
 
-async def _process_user(rng_client: RNGdleClient, db_user) -> None:
-    """Fetch rolls for one user and store them into DB history."""
+async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "background") -> dict:
+    """
+    Fetch rolls for one user and store them into DB history.
+
+    Args:
+        rng_client: RNGdle API client
+        db_user: Database user object
+        log_mode: "background" for hourly task, "manual" for explicit refresh command
+
+    Returns:
+        dict with keys: processed (int), failed (int)
+    """
+    processed = 0
+    failed = 0
+
     try:
-        # rng_client.get_user_rolls is synchronous (uses requests), run in thread
         rolls = rng_client.get_user_rolls(db_user.rng_username)
         if not rolls:
             LOGGER.debug(f"No rolls found for {db_user.rng_username}")
-            return
+            return {"processed": 0, "failed": 0}
 
         # rolls is a list of UserRolls objects, store each (upsert will ignore older ones)
         for roll in rolls:
@@ -26,17 +38,23 @@ async def _process_user(rng_client: RNGdleClient, db_user) -> None:
                     number=roll.number,
                 )
                 if inserted:
-                    LOGGER.info(
-                        f"Stored/updated rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number}"
-                    )
+                    processed += 1
+                    if log_mode == "background":
+                        LOGGER.info(
+                            f"Stored/updated rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number}"
+                        )
             except Exception:
+                failed += 1
                 LOGGER.error(
                     f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}"
                 )
     except Exception:
+        failed += 1
         LOGGER.error(
             f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}"
         )
+
+    return {"processed": processed, "failed": failed}
 
 
 async def rngdle_sync_loop():
@@ -50,7 +68,7 @@ async def rngdle_sync_loop():
                 LOGGER.info("RNGdle sync: no registered users found")
             else:
                 for user in users:
-                    await _process_user(rng_client, user)
+                    await _process_user(rng_client, user, log_mode="background")
 
             LOGGER.info(
                 f"RNGdle sync: pass complete, sleeping {RNGDLE_SYNC_INTERVAL} seconds"
@@ -59,6 +77,28 @@ async def rngdle_sync_loop():
             LOGGER.error(f"RNGdle sync loop error: {traceback.format_exc()}")
 
         await asyncio.sleep(RNGDLE_SYNC_INTERVAL)
+
+
+async def sync_guild_users(guild_id: int) -> dict:
+    """
+    Manually sync all RNGdle users for a specific guild.
+    Returns a dict with counts of processed and failed users.
+    """
+    rng_client = RNGdleClient()
+    users = await RNGdleDao.get_registered_users(guild_id)
+
+    if not users:
+        return {"processed": 0, "failed": 0, "users_count": 0}
+
+    total_processed = 0
+    total_failed = 0
+
+    for user in users:
+        stats = await _process_user(rng_client, user, log_mode="manual")
+        total_processed += stats["processed"]
+        total_failed += stats["failed"]
+
+    return {"processed": total_processed, "failed": total_failed, "users_count": len(users)}
 
 
 def schedule_rngdle_sync(bot) -> None:

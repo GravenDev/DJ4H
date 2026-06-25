@@ -8,6 +8,7 @@ from config import MAGIC_COLOR
 from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao
 from utils.image_generator import LeaderboardGenerator, LeaderboardUser
+from utils.tasks.rngdle_sync import sync_guild_users
 
 
 class RNGdle(commands.Cog):
@@ -96,6 +97,37 @@ class RNGdle(commands.Cog):
         file = discord.File(fp=buffer, filename="leaderboard.png")
 
         await ctx.respond(file=file)
+
+    @rng_group.command(description="Manually refresh RNGdle scores for all registered users")
+    @discord.default_permissions()
+    async def refresh(self, ctx: discord.ApplicationContext) -> None:
+        """Manually refresh RNGdle scores without waiting for the hourly task."""
+        await ctx.defer()
+        if ctx.guild is None:
+            await ctx.respond("This command can only be used in a server!")
+            return
+
+        result = await sync_guild_users(ctx.guild.id)
+
+        if result["users_count"] == 0:
+            message = discord.Embed(
+                title="RNGdle Refresh",
+                color=discord.Colour(MAGIC_COLOR),
+                description="No registered RNGDLE users found in this server.",
+            )
+        else:
+            description = (
+                f"Refreshed **{result['users_count']}** registered users:\n"
+                f"✅ Stored: **{result['processed']}** rolls\n"
+                f"❌ Failed: **{result['failed']}** rolls"
+            )
+            message = discord.Embed(
+                title="RNGdle Refresh Complete",
+                color=discord.Colour(MAGIC_COLOR),
+                description=description,
+            )
+
+        await ctx.respond(embed=message)
 
 
 def setup(bot):
