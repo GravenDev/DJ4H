@@ -10,7 +10,7 @@ requires-python = "~3.13"
 dependencies = [
     "py-cord (==2.8.0)",
     "python-dotenv (==1.2.2)",
-    "pillow (==12.2.0)",
+    "pillow (==12.3.0)",
     "sqlalchemy[asyncio] (==2.0.50)",
     "aiosqlite (==0.22.1)",
     "alembic (==1.18.4)",
