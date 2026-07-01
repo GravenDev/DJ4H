@@ -1,5 +1,6 @@
-import asyncio
 import traceback
+
+from discord.ext import tasks
 
 from config import LOGGER, RNGDLE_SYNC_INTERVAL
 from utils.database.dao.rngdle import RNGdleDao
@@ -27,7 +28,6 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
             LOGGER.debug(f"No rolls found for {db_user.rng_username}")
             return {"processed": 0, "failed": 0}
 
-        # rolls is a list of UserRolls objects, store each (upsert will ignore older ones)
         for roll in rolls:
             try:
                 inserted = await RNGdleDao.upsert_rngdle(
@@ -57,26 +57,24 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
     return {"processed": processed, "failed": failed}
 
 
-async def rngdle_sync_loop():
-    """Main loop: every hour fetch all registered users and sync their rolls."""
+@tasks.loop(seconds=RNGDLE_SYNC_INTERVAL)
+async def rngdle_sync_task() -> None:
+    """Every hour fetch all registered users and sync their rolls."""
     rng_client = RNGdleClient()
-    while True:
-        try:
-            LOGGER.info("RNGdle sync: starting pass to fetch registered users")
-            users = await RNGdleDao.get_all_registered_users()
-            if not users:
-                LOGGER.info("RNGdle sync: no registered users found")
-            else:
-                for user in users:
-                    await _process_user(rng_client, user, log_mode="background")
+    LOGGER.info("RNGdle sync: starting pass to fetch registered users")
+    users = await RNGdleDao.get_all_registered_users()
+    if not users:
+        LOGGER.info("RNGdle sync: no registered users found")
+    else:
+        for user in users:
+            await _process_user(rng_client, user, log_mode="background")
 
-            LOGGER.info(
-                f"RNGdle sync: pass complete, sleeping {RNGDLE_SYNC_INTERVAL} seconds"
-            )
-        except Exception:
-            LOGGER.error(f"RNGdle sync loop error: {traceback.format_exc()}")
+    LOGGER.info(f"RNGdle sync: pass complete")
 
-        await asyncio.sleep(RNGDLE_SYNC_INTERVAL)
+
+@rngdle_sync_task.error
+async def on_rngdle_sync_error(exc: Exception) -> None:
+    LOGGER.error(f"RNGdle sync task error: {exc}")
 
 
 async def sync_guild_users(guild_id: int) -> dict:
@@ -99,14 +97,3 @@ async def sync_guild_users(guild_id: int) -> dict:
         total_failed += stats["failed"]
 
     return {"processed": total_processed, "failed": total_failed, "users_count": len(users)}
-
-
-def schedule_rngdle_sync(bot) -> None:
-    """Schedule the background sync loop on the bot event loop."""
-    try:
-        bot.loop.create_task(rngdle_sync_loop())
-        LOGGER.info("RNGdle background sync scheduled")
-    except Exception:
-        LOGGER.error(
-            f"Failed to schedule rngdle sync: {traceback.format_exc()}"
-        )

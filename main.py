@@ -2,8 +2,8 @@ import discord
 
 from config import BOT_TOKEN, DEBUG_GUILD_ID, LOGGER, setup_logging
 from utils.database import init_db
-from utils.tasks.rngdle_daily_leaderboard import schedule_rngdle_daily_leaderboard
-from utils.tasks.rngdle_sync import schedule_rngdle_sync
+from utils.tasks.rngdle_daily_leaderboard import rngdle_daily_leaderboard_task
+from utils.tasks.rngdle_sync import rngdle_sync_task
 
 
 setup_logging()
@@ -22,10 +22,18 @@ async def on_ready():
     await init_db()
     LOGGER.info("Database initialized successfully.")
     LOGGER.info("------")
-    # Schedule the hourly RNGdle sync task
-    schedule_rngdle_sync(bot)
-    # Schedule the daily RNGdle leaderboard task (midnight UTC)
-    schedule_rngdle_daily_leaderboard(bot)
+
+    if not rngdle_sync_task.is_running():
+        rngdle_sync_task.start()
+        LOGGER.info("RNGdle sync task started")
+    else:
+        LOGGER.info("RNGdle sync task already running")
+
+    if not rngdle_daily_leaderboard_task.is_running():
+        rngdle_daily_leaderboard_task.start(bot)
+        LOGGER.info("RNGdle daily leaderboard task started")
+    else:
+        LOGGER.info("RNGdle daily leaderboard task already running")
 
 
 bot.load_extensions("commands", recursive=True)
