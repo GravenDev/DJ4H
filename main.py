@@ -2,6 +2,7 @@ import discord
 
 from config import BOT_TOKEN, DEBUG_GUILD_ID, LOGGER, setup_logging
 from utils.database import init_db
+from utils.tasks.rngdle_daily_leaderboard import schedule_rngdle_daily_leaderboard
 from utils.tasks.rngdle_sync import schedule_rngdle_sync
 
 
@@ -23,6 +24,8 @@ async def on_ready():
     LOGGER.info("------")
     # Schedule the hourly RNGdle sync task
     schedule_rngdle_sync(bot)
+    # Schedule the daily RNGdle leaderboard task (midnight UTC)
+    schedule_rngdle_daily_leaderboard(bot)
 
 
 bot.load_extensions("commands", recursive=True)

@@ -1,9 +1,9 @@
-﻿from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
 from sqlalchemy.sql.expression import select
 
-from utils.database import RNGdle, RNGdleUser, get_db
+from utils.database import RNGdle, RNGdleGuildConfig, RNGdleUser, get_db
 
 
 def get_today_range():
@@ -13,6 +13,16 @@ def get_today_range():
 
     start_ts = int(start_of_day.timestamp()) * 1000
     end_ts = int(start_of_next_day.timestamp()) * 1000
+    return start_ts, end_ts
+
+
+def get_yesterday_range():
+    now = datetime.now(timezone.utc)
+    start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_of_yesterday = start_of_today - timedelta(days=1)
+
+    start_ts = int(start_of_yesterday.timestamp()) * 1000
+    end_ts = int(start_of_today.timestamp()) * 1000
     return start_ts, end_ts
 
 
@@ -123,3 +133,63 @@ class RNGdleDao:
             return rows.scalars().all()
 
         return None
+
+    @staticmethod
+    async def get_scores_in_range(
+        guild_id: int, start_ts: int, end_ts: int
+    ) -> Sequence[RNGdle] | None:
+        async for session in get_db():
+            query = (
+                select(RNGdle)
+                .filter(
+                    RNGdle.guild_id == guild_id,
+                    RNGdle.date >= start_ts,
+                    RNGdle.date < end_ts,
+                )
+                .order_by(RNGdle.score.desc())
+            )
+
+            rows = await session.execute(query)
+            return rows.scalars().all()
+
+        return None
+
+
+class RNGdleGuildConfigDao:
+
+    @staticmethod
+    async def set_leaderboard_channel(guild_id: int, channel_id: int | None) -> None:
+        async for session in get_db():
+            existing = await session.execute(
+                select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id)
+            )
+            config = existing.scalars().first()
+
+            if config is not None:
+                config.leaderboard_channel_id = channel_id
+                session.add(config)
+            else:
+                config = RNGdleGuildConfig(
+                    guild_id=guild_id, leaderboard_channel_id=channel_id
+                )
+                session.add(config)
+
+            await session.commit()
+
+    @staticmethod
+    async def get_leaderboard_channel(guild_id: int) -> int | None:
+        async for session in get_db():
+            existing = await session.execute(
+                select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id)
+            )
+            config = existing.scalars().first()
+            if config is not None:
+                return config.leaderboard_channel_id
+            return None
+
+    @staticmethod
+    async def get_all_configured_guilds() -> Sequence[RNGdleGuildConfig]:
+        async for session in get_db():
+            result = await session.execute(select(RNGdleGuildConfig))
+            return result.scalars().all()
+        return []

@@ -46,3 +46,10 @@ class RNGdleUser(Base):
     user_id = Column(BigInteger, primary_key=True, nullable=False)
     guild_id = Column(BigInteger, nullable=False)
     rng_username = Column(Text, nullable=False)
+
+
+class RNGdleGuildConfig(Base):
+    __tablename__ = "rngdleguildconfig"
+
+    guild_id = Column(BigInteger, primary_key=True, nullable=False)
+    leaderboard_channel_id = Column(BigInteger, nullable=True)
