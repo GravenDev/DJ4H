@@ -9,9 +9,37 @@ from config import LOGGER
 
 class LeaderboardUser:
     user: discord.User
-    score: str
-    tirage: str = ""
     rank: int
+
+    column_headers: list[str] = []
+    column_x_offsets: list[int] = []
+    column_max_widths: list[int] = []
+
+    def get_column_values(self) -> list[str]:
+        raise NotImplementedError
+
+
+class RNGdleLeaderboardUser(LeaderboardUser):
+    score: str
+    tirage: str
+
+    column_headers = ["Tirage", "Score"]
+    column_x_offsets = [520, 650]
+    column_max_widths = [130, 140]
+
+    def get_column_values(self) -> list[str]:
+        return [self.tirage, self.score]
+
+
+class JD4HLeaderboardUser(LeaderboardUser):
+    score: str
+
+    column_headers = ["Score"]
+    column_x_offsets = [650]
+    column_max_widths = [140]
+
+    def get_column_values(self) -> list[str]:
+        return [self.score]
 
 
 class LeaderboardGenerator:
@@ -78,6 +106,11 @@ class LeaderboardGenerator:
         draw.text((x, y), text, fill=fill, font=font)
 
     async def generate_leaderboard(self, users: list[LeaderboardUser]):
+        if not users:
+            raise ValueError("No users provided")
+
+        model = type(users[0])
+
         total_height = self.HEADER_HEIGHT + (len(users) * self.ROW_HEIGHT)
         img = Image.new("RGB", (self.WIDTH, total_height), self.BG_COLOR)
         draw = ImageDraw.Draw(img)
@@ -86,8 +119,8 @@ class LeaderboardGenerator:
             [0, 0, self.WIDTH, self.HEADER_HEIGHT], fill=self.HEADER_BG_COLOR
         )
 
-        headers = ["Rang", "Pseudo", "Tirage", "Score"]
-        x_offsets = [15, 190, 520, 650]
+        headers = ["Rang", "Pseudo", *model.column_headers]
+        x_offsets = [15, 190, *model.column_x_offsets]
 
         for i, header in enumerate(headers):
             draw.text(
@@ -193,26 +226,19 @@ class LeaderboardGenerator:
                 self.TEXT_COLOR,
             )
 
-            tirage_x = x_offsets[2]
-            tirage_y = y_pos + (self.ROW_HEIGHT / 2) - 15
-            draw.text(
-                (tirage_x, tirage_y),
-                user.tirage,
-                fill=self.TEXT_COLOR,
-                font=self.font_regular,
-            )
-
-            score_x = x_offsets[3]
-            score_y = y_pos + (self.ROW_HEIGHT / 2) - 15
-            self._draw_fitted(
-                draw,
-                user.score,
-                score_x,
-                score_y,
-                140,
-                self.font_regular,
-                self.TEXT_COLOR,
-            )
+            for col_idx, col_value in enumerate(user.get_column_values()):
+                col_x = model.column_x_offsets[col_idx]
+                col_y = y_pos + (self.ROW_HEIGHT / 2) - 15
+                max_width = model.column_max_widths[col_idx]
+                self._draw_fitted(
+                    draw,
+                    col_value,
+                    col_x,
+                    col_y,
+                    max_width,
+                    self.font_regular,
+                    self.TEXT_COLOR,
+                )
 
         return img
 

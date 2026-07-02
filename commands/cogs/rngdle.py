@@ -1,15 +1,21 @@
+from io import BytesIO
+
 import discord
 from discord import SlashCommandGroup
 from discord.ext import commands
 
 from config import MAGIC_COLOR
+from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao, RNGdleGuildConfigDao
+from utils.image_generator import LeaderboardGenerator, RNGdleLeaderboardUser
+from utils.number_utils import format_number
 from utils.tasks.rngdle_sync import sync_guild_users
 
 
 class RNGdle(commands.Cog):
     def __init__(self, bot: discord.Bot):
         self.bot = bot
+        self.leaderboard_generator = LeaderboardGenerator()
 
     rng_group = SlashCommandGroup(name="rngdle", description="RNGDLE commands")
 
@@ -110,6 +116,41 @@ class RNGdle(commands.Cog):
             )
 
         await ctx.respond(embed=message)
+
+    @rng_group.command(description="Show RNGDLE leaderboard")
+    async def leaderboard(
+        self, ctx: discord.ApplicationContext
+    ) -> None:
+        """Show RNGDLE leaderboard."""
+        await ctx.defer()
+        if ctx.guild is None:
+            await ctx.respond("This command can only be used in a server!")
+            return
+
+        scores = await RNGdleDao.get_today_scores(ctx.guild.id)
+        if not scores:
+            await ctx.respond("No today scores found.")
+            return
+
+        users: list[RNGdleLeaderboardUser] = []
+        for score in scores:
+            user = await get_or_fetch_user(self.bot, score.user_id)
+            if user is None:
+                continue
+            u = RNGdleLeaderboardUser()
+            u.user = user
+            u.score = format_number(score.score)
+            u.tirage = str(score.number)
+            u.rank = len(users) + 1
+            users.append(u)
+
+        generated = await self.leaderboard_generator.generate_leaderboard(users)
+        buffer = BytesIO()
+        generated.save(buffer, format="PNG")
+        buffer.seek(0)
+        file = discord.File(fp=buffer, filename="leaderboard.png")
+
+        await ctx.respond(file=file)
 
 
 def setup(bot):
