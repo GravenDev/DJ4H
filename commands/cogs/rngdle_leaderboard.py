@@ -42,13 +42,14 @@ class RNGdleLeaderboard(commands.Cog):
         for user, score, rank in zip(users, scores, range(len(users))):
             user_ = LeaderboardUser()
             user_.user = user
-            user_.score = f"{score.score}({score.number})"
+            user_.score = str(score.score)
+            user_.tirage = str(score.number)
             user_.rank = rank + 1
             leaderboard_user.append(user_)
 
         generated_leaderboard = (
             await self.leaderboard_generator.generate_leaderboard(
-                leaderboard_user, 200
+                leaderboard_user
             )
         )
         buffer = BytesIO()

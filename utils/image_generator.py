@@ -10,6 +10,7 @@ from config import LOGGER
 class LeaderboardUser:
     user: discord.User
     score: str
+    tirage: str
     rank: int
 
 
@@ -74,52 +75,26 @@ class LeaderboardGenerator:
             self.font_regular = ImageFont.load_default()
             self.font_small = ImageFont.load_default()
 
-    async def generate_leaderboard(
-        self, users: list[LeaderboardUser], offset: int = 0
-    ):
-        """
-        Generates the leaderboard image.
-
-        Args:
-            users (list): A list of dictionaries, each representing a user.
-                          Expected keys: "username", "score", "avatar_path"..
-            offset (int): An optional offset for the score column.
-        """
+    async def generate_leaderboard(self, users: list[LeaderboardUser]):
         total_height = self.HEADER_HEIGHT + (len(users) * self.ROW_HEIGHT)
         img = Image.new("RGB", (self.WIDTH, total_height), self.BG_COLOR)
         draw = ImageDraw.Draw(img)
 
-        # Draw Header
         draw.rectangle(
             [0, 0, self.WIDTH, self.HEADER_HEIGHT], fill=self.HEADER_BG_COLOR
         )
 
-        # Header Text (Adjust positions and fonts)
-        headers = ["Rang", "Pseudo", "Score"]
-        # Column widths are still conceptual for text placement
-        # col_widths = [100, 450, 100]
-        x_offsets = [15, 190, 680 - offset]  # Starting X positions for text
+        headers = ["Rang", "Pseudo", "Tirage", "Score"]
+        x_offsets = [15, 190, 520, 650]
 
-        draw.text(
-            (x_offsets[0], self.HEADER_HEIGHT / 2 - 15),
-            headers[0],
-            fill=self.TEXT_COLOR,
-            font=self.font_regular,
-        )
-        draw.text(
-            (x_offsets[1], self.HEADER_HEIGHT / 2 - 15),
-            headers[1],
-            fill=self.TEXT_COLOR,
-            font=self.font_regular,
-        )
-        draw.text(
-            (x_offsets[2], self.HEADER_HEIGHT / 2 - 15),
-            headers[2],
-            fill=self.TEXT_COLOR,
-            font=self.font_regular,
-        )
+        for i, header in enumerate(headers):
+            draw.text(
+                (x_offsets[i], self.HEADER_HEIGHT / 2 - 15),
+                header,
+                fill=self.TEXT_COLOR,
+                font=self.font_regular,
+            )
 
-        # Draw User Rows
         for user in users:
             y_pos = self.HEADER_HEIGHT + ((user.rank - 1) * self.ROW_HEIGHT)
             row_color = (
@@ -131,11 +106,9 @@ class LeaderboardGenerator:
                 [0, y_pos, self.WIDTH, y_pos + self.ROW_HEIGHT], fill=row_color
             )
 
-            # Rank (handle top 3 differently)
-            rank_text_x = 30  # X position for rank number or icon
+            rank_text_x = 30
             rank_text_y = y_pos + (self.ROW_HEIGHT / 2) - 15
             if user.rank == 1:
-                # Placeholder for gold medal icon
                 try:
                     img.paste(
                         self.PODIUM_GOLD,
@@ -148,9 +121,8 @@ class LeaderboardGenerator:
                         str(user.rank),
                         fill=(255, 215, 0),
                         font=self.font_regular,
-                    )  # Gold color
+                    )
             elif user.rank == 2:
-                # Placeholder for silver medal icon
                 try:
                     img.paste(
                         self.PODIUM_SILVER,
@@ -163,9 +135,8 @@ class LeaderboardGenerator:
                         str(user.rank),
                         fill=(192, 192, 192),
                         font=self.font_regular,
-                    )  # Silver color
+                    )
             elif user.rank == 3:
-                # Placeholder for bronze medal icon
                 try:
                     img.paste(
                         self.PODIUM_BRONZE,
@@ -178,7 +149,7 @@ class LeaderboardGenerator:
                         str(user.rank),
                         fill=(205, 127, 50),
                         font=self.font_regular,
-                    )  # Bronze color
+                    )
             else:
                 draw.text(
                     (rank_text_x, rank_text_y),
@@ -187,7 +158,6 @@ class LeaderboardGenerator:
                     font=self.font_regular,
                 )
 
-            # Avatar (User Image) - This is where the user's actual avatar would go
             avatar_x = 100
             avatar_y = y_pos + 15
             avatar_size = 60
@@ -198,12 +168,10 @@ class LeaderboardGenerator:
                     .resize((avatar_size, avatar_size))
                     .convert("RGBA")
                 )
-                # Create a circular mask for the avatar with antialiasing
                 self.create_avatar_mask(
                     avatar_img, avatar_size, avatar_x, avatar_y, img
                 )
             except Exception:
-                # If the profile picture isn't available, displays a gray circle
                 default_avatar = Image.new(
                     "RGBA", (avatar_size, avatar_size), (120, 120, 120, 255)
                 )
@@ -211,8 +179,7 @@ class LeaderboardGenerator:
                     default_avatar, avatar_size, avatar_x, avatar_y, img
                 )
 
-            # Username
-            username_x = 190  # X position for username
+            username_x = 190
             username_y = y_pos + (self.ROW_HEIGHT / 2) - 15
             draw.text(
                 (username_x, username_y),
@@ -221,12 +188,20 @@ class LeaderboardGenerator:
                 font=self.font_regular,
             )
 
-            # Score (Niv.)
-            score_x = x_offsets[2]  # X position for score
+            tirage_x = x_offsets[2]
+            tirage_y = y_pos + (self.ROW_HEIGHT / 2) - 15
+            draw.text(
+                (tirage_x, tirage_y),
+                user.tirage,
+                fill=self.TEXT_COLOR,
+                font=self.font_regular,
+            )
+
+            score_x = x_offsets[3]
             score_y = y_pos + (self.ROW_HEIGHT / 2) - 15
             draw.text(
                 (score_x, score_y),
-                str(user.score),
+                user.score,
                 fill=self.TEXT_COLOR,
                 font=self.font_regular,
             )

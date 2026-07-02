@@ -46,11 +46,12 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         for user, score, rank in zip(users, scores, range(len(users))):
             u = LeaderboardUser()
             u.user = user
-            u.score = f"{score.score}({score.number})"
+            u.score = str(score.score)
+            u.tirage = str(score.number)
             u.rank = rank + 1
             leaderboard_users.append(u)
 
-        generated = await generator.generate_leaderboard(leaderboard_users, 200)
+        generated = await generator.generate_leaderboard(leaderboard_users)
         buffer = BytesIO()
         generated.save(buffer, format="PNG")
         buffer.seek(0)
