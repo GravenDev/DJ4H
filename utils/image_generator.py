@@ -10,7 +10,7 @@ from config import LOGGER
 class LeaderboardUser:
     user: discord.User
     score: str
-    tirage: str
+    tirage: str = ""
     rank: int
 
 
