@@ -16,7 +16,7 @@ class Admin(commands.Cog):
     )
 
     @admin.command(description="Dump the bot's log")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def dump_log(self, ctx):
         """Dump the bot's log."""
         if not ctx.guild:

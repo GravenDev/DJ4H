@@ -24,7 +24,7 @@ class RNGdle(commands.Cog):
     )
 
     @rngdle_admin.command(description="Register/Update an RNGDLE user")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def register(
         self,
         ctx: discord.ApplicationContext,
@@ -42,7 +42,7 @@ class RNGdle(commands.Cog):
         await ctx.respond(embed=message)
 
     @rngdle_admin.command(description="Show registered RNGDLE users")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def show(self, ctx: discord.ApplicationContext) -> None:
         """Show registered RNGDLE users."""
         await ctx.defer()
@@ -68,7 +68,7 @@ class RNGdle(commands.Cog):
     @rngdle_admin.command(
         description="Set the channel for daily RNGDLE leaderboard"
     )
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def setleaderboard(
         self,
         ctx: discord.ApplicationContext,
@@ -91,7 +91,7 @@ class RNGdle(commands.Cog):
         await ctx.respond(embed=message)
 
     @rngdle_admin.command(description="Manually refresh RNGdle scores for all registered users")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def refresh(self, ctx: discord.ApplicationContext) -> None:
         """Manually refresh RNGdle scores without waiting for the hourly task."""
         await ctx.defer()

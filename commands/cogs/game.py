@@ -92,7 +92,7 @@ class Game(commands.Cog):
         await ctx.respond(file=file)
 
     @jd4h_admin.command(description="Set game channel and delay")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def config(
         self,
         ctx,
@@ -131,7 +131,7 @@ class Game(commands.Cog):
         )
 
     @jd4h_admin.command(description="Set a user's score")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def set(self, ctx, member: discord.Member, score: int):
         """Set a user's score."""
         if not ctx.guild:
@@ -156,7 +156,7 @@ class Game(commands.Cog):
             )
 
     @jd4h_admin.command(description="Unset a user's score")
-    @discord.default_permissions()
+    @discord.default_permissions(administrator=True)
     async def unset(self, ctx, member: discord.Member):
         """Unset a user's score."""
         if not ctx.guild:
