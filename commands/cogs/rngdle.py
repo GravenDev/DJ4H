@@ -19,7 +19,11 @@ class RNGdle(commands.Cog):
 
     rng_group = SlashCommandGroup(name="rngdle", description="RNGDLE commands")
 
-    @rng_group.command(description="Register/Update an RNGDLE user")
+    rngdle_admin = SlashCommandGroup(
+        name="rngdle-admin", description="RNGDLE admin commands"
+    )
+
+    @rngdle_admin.command(description="Register/Update an RNGDLE user")
     @discord.default_permissions()
     async def register(
         self,
@@ -37,7 +41,7 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
-    @rng_group.command(description="Show registered RNGDLE users")
+    @rngdle_admin.command(description="Show registered RNGDLE users")
     @discord.default_permissions()
     async def show(self, ctx: discord.ApplicationContext) -> None:
         """Show registered RNGDLE users."""
@@ -61,7 +65,7 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
-    @rng_group.command(
+    @rngdle_admin.command(
         description="Set the channel for daily RNGDLE leaderboard"
     )
     @discord.default_permissions()
@@ -86,7 +90,7 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
-    @rng_group.command(description="Manually refresh RNGdle scores for all registered users")
+    @rngdle_admin.command(description="Manually refresh RNGdle scores for all registered users")
     @discord.default_permissions()
     async def refresh(self, ctx: discord.ApplicationContext) -> None:
         """Manually refresh RNGdle scores without waiting for the hourly task."""
