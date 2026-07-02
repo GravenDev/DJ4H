@@ -7,6 +7,7 @@ from config import MAGIC_COLOR
 from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao
 from utils.image_generator import LeaderboardGenerator, LeaderboardUser
+from utils.number_utils import format_number
 
 
 class RNGdleLeaderboard(commands.Cog):
@@ -42,7 +43,7 @@ class RNGdleLeaderboard(commands.Cog):
         for user, score, rank in zip(users, scores, range(len(users))):
             user_ = LeaderboardUser()
             user_.user = user
-            user_.score = str(score.score)
+            user_.score = format_number(score.score)
             user_.tirage = str(score.number)
             user_.rank = rank + 1
             leaderboard_user.append(user_)

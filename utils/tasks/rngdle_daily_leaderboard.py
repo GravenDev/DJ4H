@@ -8,6 +8,7 @@ from config import LOGGER
 from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao, RNGdleGuildConfigDao, get_yesterday_range
 from utils.image_generator import LeaderboardGenerator, LeaderboardUser
+from utils.number_utils import format_number
 
 
 @tasks.loop(time=time(hour=0, minute=0, tzinfo=timezone.utc))
@@ -46,7 +47,7 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         for user, score, rank in zip(users, scores, range(len(users))):
             u = LeaderboardUser()
             u.user = user
-            u.score = str(score.score)
+            u.score = format_number(score.score)
             u.tirage = str(score.number)
             u.rank = rank + 1
             leaderboard_users.append(u)

@@ -31,9 +31,7 @@ class LeaderboardGenerator:
     HIGHLIGHT_COLOR = (0, 100, 200)  # For "async" button
 
     def __init__(self):
-        """
-        Initializes the Leaderboard Generator.
-        """
+        self.font_path = None
         self.base_path = (
             f"{pathlib.Path(__file__).parent.resolve()}/../ressources"
         )
@@ -57,23 +55,27 @@ class LeaderboardGenerator:
         )
 
         try:
-            # Attempt to load a specific font, fallback to default if not found or no path provided
-            self.font_header = ImageFont.truetype(
-                f"{self.base_path}/font/outfit.ttf", 40
-            )
-            self.font_regular = ImageFont.truetype(
-                f"{self.base_path}/font/outfit.ttf", 30
-            )
-            self.font_small = ImageFont.truetype(
-                f"{self.base_path}/font/outfit.ttf", 24
-            )
+            self.font_path = f"{self.base_path}/font/outfit.ttf"
+            self.font_header = ImageFont.truetype(self.font_path, 40)
+            self.font_regular = ImageFont.truetype(self.font_path, 30)
+            self.font_small = ImageFont.truetype(self.font_path, 24)
         except IOError:
             LOGGER.warning(
                 "Warning: Could not load specified font. Using Pillow's default font."
             )
+            self.font_path = None
             self.font_header = ImageFont.load_default()
             self.font_regular = ImageFont.load_default()
             self.font_small = ImageFont.load_default()
+
+    def _draw_fitted(self, draw, text, x, y, max_width, base_font, fill):
+        if self.font_path is None:
+            draw.text((x, y), text, fill=fill, font=base_font)
+            return
+        font = base_font
+        while draw.textlength(text, font=font) > max_width and font.size > 1:
+            font = ImageFont.truetype(self.font_path, font.size - 1)
+        draw.text((x, y), text, fill=fill, font=font)
 
     async def generate_leaderboard(self, users: list[LeaderboardUser]):
         total_height = self.HEADER_HEIGHT + (len(users) * self.ROW_HEIGHT)
@@ -181,11 +183,14 @@ class LeaderboardGenerator:
 
             username_x = 190
             username_y = y_pos + (self.ROW_HEIGHT / 2) - 15
-            draw.text(
-                (username_x, username_y),
+            self._draw_fitted(
+                draw,
                 user.user.name,
-                fill=self.TEXT_COLOR,
-                font=self.font_regular,
+                username_x,
+                username_y,
+                320,
+                self.font_regular,
+                self.TEXT_COLOR,
             )
 
             tirage_x = x_offsets[2]
@@ -199,11 +204,14 @@ class LeaderboardGenerator:
 
             score_x = x_offsets[3]
             score_y = y_pos + (self.ROW_HEIGHT / 2) - 15
-            draw.text(
-                (score_x, score_y),
+            self._draw_fitted(
+                draw,
                 user.score,
-                fill=self.TEXT_COLOR,
-                font=self.font_regular,
+                score_x,
+                score_y,
+                140,
+                self.font_regular,
+                self.TEXT_COLOR,
             )
 
         return img
