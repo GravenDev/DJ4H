@@ -6,6 +6,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 from config import LOGGER
 
+SPACE_WIDTH = 8
+NUM_WIDTH = 18.5
+
 
 class LeaderboardUser:
     user: discord.User
@@ -96,14 +99,62 @@ class LeaderboardGenerator:
             self.font_regular = ImageFont.load_default()
             self.font_small = ImageFont.load_default()
 
-    def _draw_fitted(self, draw, text, x, y, max_width, base_font, fill):
+    def _draw_rngdle_number(
+        self,
+        draw: ImageDraw.ImageDraw,
+        num_string: str,
+        x: float,
+        y: float,
+        max_width: float,
+    ):
+        # Special handling to format the draw in a monospace way
+        char_amount = 7  # maximum 7 chars in a score: "XXX XXX"
+        char_max_width = max_width / char_amount
+        curr_pos_x = x + NUM_WIDTH * (char_amount - len(num_string))
+
+        if " " not in num_string:
+            # Realign to the left with the correct space width
+            curr_pos_x += SPACE_WIDTH - NUM_WIDTH
+
+        for character in num_string:
+            if character.isspace():
+                char_width = SPACE_WIDTH
+            else:
+                char_width = NUM_WIDTH
+
+            if char_width > char_max_width:
+                LOGGER.warning(
+                    f"Warning: character width of {char_width} found in rngdle number rendering, overflowing max possible width of {char_max_width}"
+                )
+
+            self._draw_fitted(
+                draw,
+                character,
+                curr_pos_x,
+                y,
+                char_width * 1.2,
+                self.font_regular,
+                self.TEXT_COLOR,
+                anchor="mt",
+            )
+            curr_pos_x += char_width
+
+        total_width = curr_pos_x - x
+        if total_width > max_width:
+            LOGGER.warning(
+                f"Warning: rendering of the rngdle number {num_string} overflowed the max possible width of {max_width} with width of {total_width}"
+            )
+
+    def _draw_fitted(
+        self, draw, text, x, y, max_width, base_font, fill, anchor="lt"
+    ):
         if self.font_path is None:
-            draw.text((x, y), text, fill=fill, font=base_font)
+            draw.text((x, y), text, fill=fill, font=base_font, anchor=anchor)
             return
         font = base_font
         while draw.textlength(text, font=font) > max_width and font.size > 1:
             font = ImageFont.truetype(self.font_path, font.size - 1)
-        draw.text((x, y), text, fill=fill, font=font)
+        draw.text((x, y), text, fill=fill, font=font, anchor=anchor)
 
     async def generate_leaderboard(self, users: list[LeaderboardUser]):
         if not users:
@@ -230,15 +281,21 @@ class LeaderboardGenerator:
                 col_x = model.column_x_offsets[col_idx]
                 col_y = y_pos + (self.ROW_HEIGHT / 2) - 15
                 max_width = model.column_max_widths[col_idx]
-                self._draw_fitted(
-                    draw,
-                    col_value,
-                    col_x,
-                    col_y,
-                    max_width,
-                    self.font_regular,
-                    self.TEXT_COLOR,
-                )
+
+                if user.column_headers[col_idx] == "Tirage":  # RNGdle draw
+                    self._draw_rngdle_number(
+                        draw, col_value, col_x, col_y, max_width
+                    )
+                else:
+                    self._draw_fitted(
+                        draw,
+                        col_value,
+                        col_x,
+                        col_y,
+                        max_width,
+                        self.font_regular,
+                        self.TEXT_COLOR,
+                    )
 
         return img
 
