@@ -148,8 +148,7 @@ def get_tier_emote(tier: Tier):
 
 
 def format_tier(tier: Tier):
-    emote = get_tier_emote(tier)
-    return f"{tier.name.title()} {emote}"
+    return f"{tier.name.title()}"
 
 
 class RNGdle:

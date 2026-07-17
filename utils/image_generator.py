@@ -10,6 +10,7 @@ from utils.rngdle import Tier
 
 SPACE_WIDTH = 8
 NUM_WIDTH = 18.5
+TIER_SQUARE_SIZE = 40
 
 type FontType = ImageFont.FreeTypeFont | ImageFont.ImageFont
 type ColorType = tuple[int, int, int]
@@ -35,7 +36,7 @@ class RNGdleLeaderboardUser(LeaderboardUser):
     tier_color: ColorType
 
     column_headers = ["Tirage", "Score", "Rareté"]
-    column_x_offsets = [500, 640, 800]
+    column_x_offsets = [500, 640, 810]
     # Can add an extrac width to be used as a margin spacer on the right of the image
     column_max_widths = [140, 130, 180, 20]
 
@@ -326,6 +327,33 @@ class LeaderboardGenerator:
 
                     elif user.column_headers[col_idx] == "Rareté":
                         text_color = user.tier_color
+
+                        _, top, _, bottom = draw.textbbox(
+                            (col_x, col_y), "sample"
+                        )
+                        line_height = abs(top - bottom)
+                        space_around_square = (
+                            line_height - TIER_SQUARE_SIZE
+                        ) / 2
+
+                        square_left = col_x + max_width - TIER_SQUARE_SIZE
+                        square_right = square_left + TIER_SQUARE_SIZE
+                        square_top = y_pos - space_around_square
+                        square_bottom = square_top + TIER_SQUARE_SIZE
+                        draw.rounded_rectangle(
+                            (
+                                square_left,
+                                square_top,
+                                square_right,
+                                square_bottom,
+                            ),
+                            8,
+                            text_color,
+                        )
+
+                        # Move the text some space to the left to not overlap the tier square
+                        col_x -= TIER_SQUARE_SIZE
+                        col_x -= 10  # extra padding
 
                 self._draw_fitted_align_right(
                     draw,
