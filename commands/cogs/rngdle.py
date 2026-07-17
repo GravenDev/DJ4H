@@ -9,6 +9,12 @@ from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao, RNGdleGuildConfigDao
 from utils.image_generator import LeaderboardGenerator, RNGdleLeaderboardUser
 from utils.number_utils import format_number
+from utils.rngdle import (
+    format_tier,
+    get_score_tier,
+    get_tier_color,
+    load_score_to_percent_table,
+)
 from utils.tasks.rngdle_sync import sync_guild_users
 
 
@@ -65,7 +71,9 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
-    @rngdle_admin.command(description="Set the channel for daily RNGDLE leaderboard")
+    @rngdle_admin.command(
+        description="Set the channel for daily RNGDLE leaderboard"
+    )
     @discord.default_permissions(administrator=True)
     async def setleaderboard(
         self,
@@ -78,7 +86,9 @@ class RNGdle(commands.Cog):
             await ctx.respond("This command can only be used in a server!")
             return
 
-        await RNGdleGuildConfigDao.set_leaderboard_channel(ctx.guild.id, channel.id)
+        await RNGdleGuildConfigDao.set_leaderboard_channel(
+            ctx.guild.id, channel.id
+        )
         message = discord.Embed(
             title="RNGdle Leaderboard Channel",
             color=discord.Colour(MAGIC_COLOR),
@@ -133,15 +143,24 @@ class RNGdle(commands.Cog):
             return
 
         users: list[RNGdleLeaderboardUser] = []
-        for score in scores:
-            user = await get_or_fetch_user(self.bot, score.user_id)
+        for idx, score_col in enumerate(scores):
+            user = await get_or_fetch_user(self.bot, score_col.user_id)
             if user is None:
                 continue
+
+            score = int(score_col.score)
+            number = score_col.number
+            if idx == 0:  # FIX: Remove
+                number %= 1000
+
             u = RNGdleLeaderboardUser()
             u.user = user
-            u.score = format_number(score.score)
-            u.tirage = f"{score.number:,}".replace(",", " ")
+            u.score = format_number(score)
+            u.tirage = f"{number:,}".replace(",", " ")
             u.rank = len(users) + 1
+            u.tier = get_score_tier(score)
+            u.tier_text = format_tier(u.tier)
+            u.tier_color = get_tier_color(u.tier)
             users.append(u)
 
         generated = await self.leaderboard_generator.generate_leaderboard(users)

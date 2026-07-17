@@ -1,13 +1,18 @@
 import pathlib
 from io import BytesIO
+import typing
 
 import discord
 from PIL import Image, ImageDraw, ImageFont
 
 from config import LOGGER
+from utils.rngdle import Tier
 
 SPACE_WIDTH = 8
 NUM_WIDTH = 18.5
+
+type FontType = ImageFont.FreeTypeFont | ImageFont.ImageFont
+type ColorType = tuple[int, int, int]
 
 
 class LeaderboardUser:
@@ -25,13 +30,17 @@ class LeaderboardUser:
 class RNGdleLeaderboardUser(LeaderboardUser):
     score: str
     tirage: str
+    tier: Tier
+    tier_text: str
+    tier_color: ColorType
 
-    column_headers = ["Tirage", "Score"]
-    column_x_offsets = [520, 650]
-    column_max_widths = [130, 140]
+    column_headers = ["Tirage", "Score", "Rareté"]
+    column_x_offsets = [500, 640, 800]
+    # Can add an extrac width to be used as a margin spacer on the right of the image
+    column_max_widths = [140, 130, 180, 20]
 
     def get_column_values(self) -> list[str]:
-        return [self.tirage, self.score]
+        return [self.tirage, self.score, self.tier_text]
 
 
 class JD4HLeaderboardUser(LeaderboardUser):
@@ -54,42 +63,47 @@ class LeaderboardGenerator:
     ROW_HEIGHT: int = 90
     HEADER_HEIGHT: int = 100
 
-    BG_COLOR = (25, 25, 25)  # Dark background
-    TEXT_COLOR = (255, 255, 255)  # White text
-    HEADER_BG_COLOR = (50, 50, 50)  # Slightly lighter header background
-    ROW_EVEN_COLOR = (35, 35, 35)  # Even row background
-    ROW_ODD_COLOR = (45, 45, 45)  # Odd row background
-    HIGHLIGHT_COLOR = (0, 100, 200)  # For "async" button
+    BG_COLOR: ColorType = (25, 25, 25)  # Dark background
+    TEXT_COLOR: ColorType = (255, 255, 255)  # White text
+    # Slightly lighter header background
+    HEADER_BG_COLOR: ColorType = (50, 50, 50)
+    ROW_EVEN_COLOR: ColorType = (35, 35, 35)  # Even row background
+    ROW_ODD_COLOR: ColorType = (45, 45, 45)  # Odd row background
+    HIGHLIGHT_COLOR: ColorType = (0, 100, 200)  # For "async" button
 
     def __init__(self):
-        self.font_path = None
-        self.base_path = (
-            f"{pathlib.Path(__file__).parent.resolve()}/../ressources"
+        self.font_path: pathlib.Path | None = None
+        self.base_path: pathlib.Path = (
+            pathlib.Path(__file__).parent.resolve() / ".." / "ressources"
         )
+
         self._load_static_resources()
 
     def _load_static_resources(self):
         self.PODIUM_BRONZE = (
-            Image.open(f"{self.base_path}/images/medal_bronze.png")
+            Image.open(self.base_path / "images" / "medal_bronze.png")
             .convert("RGBA")
             .resize((50, 50))
         )
         self.PODIUM_SILVER = (
-            Image.open(f"{self.base_path}/images/medal_silver.png")
+            Image.open(self.base_path / "images" / "medal_silver.png")
             .convert("RGBA")
             .resize((50, 50))
         )
         self.PODIUM_GOLD = (
-            Image.open(f"{self.base_path}/images/medal_gold.png")
+            Image.open(self.base_path / "images" / "medal_gold.png")
             .convert("RGBA")
             .resize((50, 50))
         )
 
         try:
-            self.font_path = f"{self.base_path}/font/outfit.ttf"
+            self.font_path = self.base_path / "font" / "outfit.ttf"
             self.font_header = ImageFont.truetype(self.font_path, 40)
             self.font_regular = ImageFont.truetype(self.font_path, 30)
             self.font_small = ImageFont.truetype(self.font_path, 24)
+
+            self.font_mono_path = self.base_path / "font" / "spacemono_bold.ttf"
+            self.font_mono_regular = ImageFont.truetype(self.font_mono_path, 30)
         except IOError:
             LOGGER.warning(
                 "Warning: Could not load specified font. Using Pillow's default font."
@@ -99,62 +113,50 @@ class LeaderboardGenerator:
             self.font_regular = ImageFont.load_default()
             self.font_small = ImageFont.load_default()
 
-    def _draw_rngdle_number(
+            self.font_mono_regular = ImageFont.load_default()
+
+    def _draw_fitted(
         self,
         draw: ImageDraw.ImageDraw,
-        num_string: str,
+        text: str,
         x: float,
         y: float,
         max_width: float,
-    ):
-        # Special handling to format the draw in a monospace way
-        char_amount = 7  # maximum 7 chars in a score: "XXX XXX"
-        char_max_width = max_width / char_amount
-        curr_pos_x = x + NUM_WIDTH * (char_amount - len(num_string))
-
-        if " " not in num_string:
-            # Realign to the left with the correct space width
-            curr_pos_x += SPACE_WIDTH - NUM_WIDTH
-
-        for character in num_string:
-            if character.isspace():
-                char_width = SPACE_WIDTH
-            else:
-                char_width = NUM_WIDTH
-
-            if char_width > char_max_width:
-                LOGGER.warning(
-                    f"Warning: character width of {char_width} found in rngdle number rendering, overflowing max possible width of {char_max_width}"
-                )
-
-            self._draw_fitted(
-                draw,
-                character,
-                curr_pos_x,
-                y,
-                char_width * 1.2,
-                self.font_regular,
-                self.TEXT_COLOR,
-                anchor="mt",
-            )
-            curr_pos_x += char_width
-
-        total_width = curr_pos_x - x
-        if total_width > max_width:
-            LOGGER.warning(
-                f"Warning: rendering of the rngdle number {num_string} overflowed the max possible width of {max_width} with width of {total_width}"
-            )
-
-    def _draw_fitted(
-        self, draw, text, x, y, max_width, base_font, fill, anchor="lt"
+        base_font: FontType,
+        fill: ColorType,
+        anchor: str = "lt",
     ):
         if self.font_path is None:
             draw.text((x, y), text, fill=fill, font=base_font, anchor=anchor)
             return
         font = base_font
-        while draw.textlength(text, font=font) > max_width and font.size > 1:
-            font = ImageFont.truetype(self.font_path, font.size - 1)
+        font_path = getattr(font, "path", self.font_path)
+        font_size = getattr(font, "size", 30)  # 30 is regular font size
+        while draw.textlength(text, font=font) > max_width and font_size > 1:
+            font_size -= 1
+            font = ImageFont.truetype(font_path, font_size)
         draw.text((x, y), text, fill=fill, font=font, anchor=anchor)
+
+    def _draw_fitted_align_right(
+        self,
+        draw: ImageDraw.ImageDraw,
+        text: str,
+        x: float,
+        y: float,
+        max_width: float,
+        base_font: FontType,
+        fill: ColorType,
+    ):
+        self._draw_fitted(
+            draw,
+            text,
+            x + max_width,
+            y,
+            max_width,
+            base_font,
+            fill,
+            anchor="rt",
+        )
 
     async def generate_leaderboard(self, users: list[LeaderboardUser]):
         if not users:
@@ -163,22 +165,50 @@ class LeaderboardGenerator:
         model = type(users[0])
 
         total_height = self.HEADER_HEIGHT + (len(users) * self.ROW_HEIGHT)
-        img = Image.new("RGB", (self.WIDTH, total_height), self.BG_COLOR)
+        min_possible_width = self.WIDTH
+        if model.column_x_offsets:
+            last_start_pos = model.column_x_offsets[-1]
+            has_spacer = len(model.column_x_offsets) != len(
+                model.column_max_widths
+            )
+            last_width = (
+                model.column_max_widths[-2]
+                if has_spacer
+                else model.column_max_widths[-1]
+            )
+            spacer_width = model.column_max_widths[-1] if has_spacer else 0
+            total_width = last_start_pos + last_width + spacer_width
+
+            min_possible_width = max(min_possible_width, total_width)
+
+        img = Image.new(
+            "RGB", (min_possible_width, total_height), self.BG_COLOR
+        )
         draw = ImageDraw.Draw(img)
 
         draw.rectangle(
-            [0, 0, self.WIDTH, self.HEADER_HEIGHT], fill=self.HEADER_BG_COLOR
+            [0, 0, min_possible_width, self.HEADER_HEIGHT],
+            fill=self.HEADER_BG_COLOR,
         )
 
         headers = ["Rang", "Pseudo", *model.column_headers]
         x_offsets = [15, 190, *model.column_x_offsets]
 
         for i, header in enumerate(headers):
+            x, y = x_offsets[i], self.HEADER_HEIGHT / 2 - 15
+
+            anchor = "lt"
+            if model == RNGdleLeaderboardUser and i >= 2:
+                # Anchor to the right and fix the x position for the text
+                anchor = "rt"
+                x += model.column_max_widths[i - 2]
+
             draw.text(
-                (x_offsets[i], self.HEADER_HEIGHT / 2 - 15),
+                (x, y),
                 header,
                 fill=self.TEXT_COLOR,
                 font=self.font_regular,
+                anchor=anchor,
             )
 
         for user in users:
@@ -189,7 +219,8 @@ class LeaderboardGenerator:
                 else self.ROW_ODD_COLOR
             )
             draw.rectangle(
-                [0, y_pos, self.WIDTH, y_pos + self.ROW_HEIGHT], fill=row_color
+                [0, y_pos, min_possible_width, y_pos + self.ROW_HEIGHT],
+                fill=row_color,
             )
 
             rank_text_x = 30
@@ -282,20 +313,29 @@ class LeaderboardGenerator:
                 col_y = y_pos + (self.ROW_HEIGHT / 2) - 15
                 max_width = model.column_max_widths[col_idx]
 
-                if user.column_headers[col_idx] == "Tirage":  # RNGdle draw
-                    self._draw_rngdle_number(
-                        draw, col_value, col_x, col_y, max_width
-                    )
-                else:
-                    self._draw_fitted(
-                        draw,
-                        col_value,
-                        col_x,
-                        col_y,
-                        max_width,
-                        self.font_regular,
-                        self.TEXT_COLOR,
-                    )
+                font = self.font_regular
+                text_color = self.TEXT_COLOR
+
+                if isinstance(user, RNGdleLeaderboardUser):
+
+                    if user.column_headers[col_idx] == "Tirage":  # RNGdle draw
+                        # Left pad the number string to be at least 7 chars long for even rendering
+                        col_value = f"{col_value:>7}"
+                        font = self.font_mono_regular
+                        text_color = user.tier_color
+
+                    elif user.column_headers[col_idx] == "Rareté":
+                        text_color = user.tier_color
+
+                self._draw_fitted_align_right(
+                    draw,
+                    col_value,
+                    col_x,
+                    col_y,
+                    max_width,
+                    font,
+                    text_color,
+                )
 
         return img
 

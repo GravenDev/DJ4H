@@ -24,7 +24,7 @@ class Admin(commands.Cog):
             return
 
         current_path = pathlib.Path(__file__).parent.resolve()
-        log_file = pathlib.Path(f"{current_path}/../../logs/bot.log")
+        log_file = current_path / ".." / ".." / "logs" / "bot.log"
         if not log_file.exists():
             await ctx.respond("Log file does not exist.")
             return

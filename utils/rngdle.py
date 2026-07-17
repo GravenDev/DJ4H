@@ -1,6 +1,15 @@
-﻿from datetime import datetime
+﻿from ast import literal_eval
+from bisect import bisect_left
+import bisect
+from datetime import datetime
+from enum import Enum
+import json
+from pathlib import Path
+import typing
 
 import requests
+
+from config import LOGGER
 
 
 class UserRolls:
@@ -27,6 +36,122 @@ def to_timestamp(date):
     return timestamp
 
 
+def load_score_to_percent_table():
+
+    root_path = Path(__file__).parent.parent
+    rngdle_resources = root_path / "ressources" / "rngdle"
+    with open(rngdle_resources / "score_to_percent.json", mode="r") as file:
+        data = json.load(file)
+
+    evaluated_data: dict[int, float] = {}
+    for score, percent in data.items():
+        actual_score = typing.cast(int, literal_eval(score))
+        if not isinstance(actual_score, (int, float)):
+            LOGGER.warning(
+                f"Warning RNGdle: found key of type {type(actual_score)} with value {actual_score} while parsing score_to_percent.json"
+            )
+        elif (
+            isinstance(actual_score, float)
+            and int(actual_score) != actual_score
+        ):
+            LOGGER.warning(
+                f"Warning RNGdle: found key with value {actual_score} (invalid score) while parsing score_to_percent.json"
+            )
+
+        evaluated_data[actual_score] = percent
+    return evaluated_data
+
+
+SCORE_TO_PERCENT = load_score_to_percent_table()
+KNOWN_SCORES = sorted(SCORE_TO_PERCENT.keys())
+
+
+class Tier(Enum):
+    TRASH = 1
+    COMMON = 2
+    UNCOMMON = 3
+    RARE = 4
+    EPIC = 5
+    ANOMALY = 6
+    MYTHIC = 7
+    ERROR = 8
+
+
+TIER_TO_COLOR = {
+    Tier.TRASH: (255, 210, 48),
+    Tier.COMMON: (153, 161, 175),
+    Tier.UNCOMMON: (94, 233, 181),
+    Tier.RARE: (142, 197, 255),
+    Tier.EPIC: (218, 178, 255),
+    Tier.ANOMALY: (255, 184, 106),
+    Tier.MYTHIC: (253, 165, 213),
+    Tier.ERROR: (255, 0, 0),
+}
+
+TIER_TO_EMOTE = {
+    Tier.TRASH: "🟨",
+    Tier.COMMON: "⬜",
+    Tier.UNCOMMON: "🟩",
+    Tier.RARE: "🟦",
+    Tier.EPIC: "🟪",
+    Tier.ANOMALY: "🟧",
+    Tier.MYTHIC: "🟥",
+    Tier.ERROR: "❌",
+}
+
+
+def get_score_tier(score: int):
+    if score not in SCORE_TO_PERCENT:
+        LOGGER.warning(
+            f"Warning RNGdle: unexpected score {score} (not in table)."
+        )
+
+        # Enable if you prefer to not consider unknown scores
+        # return Tier.ERROR
+
+        # Find the highest known score that is below the given score and consider it for selecting the tier
+        fixed_score_idx = bisect.bisect_left(KNOWN_SCORES, score) - 1
+        fixed_score_idx = max(fixed_score_idx, 0)
+        score = KNOWN_SCORES[fixed_score_idx]
+
+    percent = SCORE_TO_PERCENT[score]
+
+    if 0 <= percent < 2:
+        tier = Tier.TRASH
+    elif percent < 50:
+        tier = Tier.COMMON
+    elif percent < 75:
+        tier = Tier.UNCOMMON
+    elif percent < 90:
+        tier = Tier.RARE
+    elif percent < 95:
+        tier = Tier.EPIC
+    elif percent < 99:
+        tier = Tier.ANOMALY
+    elif percent < 100:
+        tier = Tier.MYTHIC
+    else:
+        LOGGER.warning(
+            f"Warning RNGdle: unexpected score ({score}) and percent value ({percent})."
+        )
+        return Tier.ERROR
+
+    return tier
+
+
+def get_tier_color(tier: Tier):
+    return TIER_TO_COLOR[tier]
+
+
+def get_tier_emote(tier: Tier):
+    return TIER_TO_EMOTE[tier]
+
+
+def format_tier(tier: Tier):
+    emote = get_tier_emote(tier)
+    return f"{tier.name.title()} {emote}"
+
+
 class RNGdle:
     def __init__(self):
         self.api_url = (
@@ -46,7 +171,9 @@ class RNGdle:
             user_roll = to_user_rolls(result["rolls"])
             previous_roll += user_roll
             if result["hasMore"]:
-                return self.get_user_rolls(username, previous_roll, offset + 100)
+                return self.get_user_rolls(
+                    username, previous_roll, offset + 100
+                )
             return previous_roll
         else:
             return None
