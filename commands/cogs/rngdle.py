@@ -13,9 +13,8 @@ from utils.rngdle import (
     format_tier,
     get_score_tier,
     get_tier_color,
-    load_score_to_percent_table,
 )
-from utils.tasks.rngdle_sync import sync_guild_users
+from utils.tasks.rngdle_sync import rngdle_fetch_with_cooldown, sync_guild_users
 
 
 class RNGdle(commands.Cog):
@@ -136,6 +135,9 @@ class RNGdle(commands.Cog):
         if ctx.guild is None:
             await ctx.respond("This command can only be used in a server!")
             return
+
+        # Fetch rolls before accessing them
+        await rngdle_fetch_with_cooldown()
 
         scores = await RNGdleDao.get_today_scores(ctx.guild.id)
         if not scores:

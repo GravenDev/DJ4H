@@ -1,3 +1,4 @@
+import datetime
 import traceback
 
 from discord.ext import tasks
@@ -6,8 +7,13 @@ from config import LOGGER, RNGDLE_SYNC_INTERVAL
 from utils.database.dao.rngdle import RNGdleDao
 from utils.rngdle import RNGdle as RNGdleClient
 
+# Register when the last sync was done, used for fetching cooldown
+_last_rngdle_sync = datetime.datetime.fromtimestamp(0)
 
-async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "background") -> dict:
+
+async def _process_user(
+    rng_client: RNGdleClient, db_user, log_mode: str = "background"
+) -> dict:
     """
     Fetch rolls for one user and store them into DB history.
 
@@ -19,8 +25,12 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
     Returns:
         dict with keys: processed (int), failed (int)
     """
+    global _last_rngdle_sync
+
     processed = 0
     failed = 0
+
+    _last_rngdle_sync = datetime.datetime.now()
 
     try:
         rolls = rng_client.get_user_rolls(db_user.rng_username)
@@ -58,8 +68,18 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
 
 
 @tasks.loop(seconds=RNGDLE_SYNC_INTERVAL)
-async def rngdle_sync_task() -> None:
+async def rngdle_autosync_task() -> None:
     """Every hour fetch all registered users and sync their rolls."""
+    return await rngdle_fetch_task()
+
+
+@rngdle_autosync_task.error
+async def on_rngdle_sync_error(exc: Exception) -> None:
+    LOGGER.error(f"RNGdle sync task error: {exc}")
+
+
+async def rngdle_fetch_task() -> None:
+    """Fetch all registered users and sync their rolls."""
     rng_client = RNGdleClient()
     LOGGER.info("RNGdle sync: starting pass to fetch registered users")
     users = await RNGdleDao.get_all_registered_users()
@@ -72,9 +92,18 @@ async def rngdle_sync_task() -> None:
     LOGGER.info(f"RNGdle sync: pass complete")
 
 
-@rngdle_sync_task.error
-async def on_rngdle_sync_error(exc: Exception) -> None:
-    LOGGER.error(f"RNGdle sync task error: {exc}")
+RNGdle_COOLDOWN = datetime.timedelta(minutes=5)
+
+
+async def rngdle_fetch_with_cooldown() -> None:
+    now = datetime.datetime.now()
+    since_last_sync = now - _last_rngdle_sync
+    if since_last_sync < RNGdle_COOLDOWN:
+        LOGGER.info(
+            f"RNGdle: did not fetch users because of cooldown (elapsed: {round(since_last_sync.total_seconds())}s; cooldown: {round(RNGdle_COOLDOWN.total_seconds())}s)"
+        )
+        return
+    return await rngdle_fetch_task()
 
 
 async def sync_guild_users(guild_id: int) -> dict:
@@ -96,4 +125,8 @@ async def sync_guild_users(guild_id: int) -> dict:
         total_processed += stats["processed"]
         total_failed += stats["failed"]
 
-    return {"processed": total_processed, "failed": total_failed, "users_count": len(users)}
+    return {
+        "processed": total_processed,
+        "failed": total_failed,
+        "users_count": len(users),
+    }

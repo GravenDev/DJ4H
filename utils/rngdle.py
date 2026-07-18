@@ -48,14 +48,14 @@ def load_score_to_percent_table():
         actual_score = typing.cast(int, literal_eval(score))
         if not isinstance(actual_score, (int, float)):
             LOGGER.warning(
-                f"Warning RNGdle: found key of type {type(actual_score)} with value {actual_score} while parsing score_to_percent.json"
+                f"RNGdle: found key of type {type(actual_score)} with value {actual_score} while parsing score_to_percent.json"
             )
         elif (
             isinstance(actual_score, float)
             and int(actual_score) != actual_score
         ):
             LOGGER.warning(
-                f"Warning RNGdle: found key with value {actual_score} (invalid score) while parsing score_to_percent.json"
+                f"RNGdle: found key with value {actual_score} (invalid score) while parsing score_to_percent.json"
             )
 
         evaluated_data[actual_score] = percent
@@ -102,9 +102,7 @@ TIER_TO_EMOTE = {
 
 def get_score_tier(score: int):
     if score not in SCORE_TO_PERCENT:
-        LOGGER.warning(
-            f"Warning RNGdle: unexpected score {score} (not in table)."
-        )
+        LOGGER.warning(f"RNGdle: unexpected score {score} (not in table).")
 
         # Enable if you prefer to not consider unknown scores
         # return Tier.ERROR
@@ -132,7 +130,7 @@ def get_score_tier(score: int):
         tier = Tier.MYTHIC
     else:
         LOGGER.warning(
-            f"Warning RNGdle: unexpected score ({score}) and percent value ({percent})."
+            f"RNGdle: unexpected score ({score}) and percent value ({percent})."
         )
         return Tier.ERROR
 
