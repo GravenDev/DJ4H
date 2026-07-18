@@ -33,15 +33,16 @@ class RNGdleLeaderboardUser(LeaderboardUser):
     tirage: str
     tier: Tier
     tier_text: str
+    percent_text: str
     tier_color: ColorType
 
-    column_headers = ["Tirage", "Score", "Rareté"]
-    column_x_offsets = [500, 640, 790]
+    column_headers = ["Tirage", "Rareté", "Score", "Placement"]
+    column_x_offsets = [500, 640, 840, 990]
     # Can add an extrac width to be used as a margin spacer on the right of the image
-    column_max_widths = [140, 130, 170, 20]
+    column_max_widths = [140, 180, 130, 180, 20]
 
     def get_column_values(self) -> list[str]:
-        return [self.tirage, self.score, self.tier_text]
+        return [self.tirage, self.tier_text, self.score, self.percent_text]
 
 
 class JD4HLeaderboardUser(LeaderboardUser):

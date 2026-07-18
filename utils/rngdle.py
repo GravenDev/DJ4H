@@ -62,10 +62,41 @@ def load_score_to_percent_table():
     return evaluated_data
 
 
+def load_compressed_score_to_percent_table():
+
+    root_path = Path(__file__).parent.parent
+    rngdle_resources = root_path / "ressources" / "rngdle"
+    with open(
+        rngdle_resources / "compressed_score_to_percent.json", mode="r"
+    ) as file:
+        data = json.load(file)
+
+    evaluated_data: dict[int, float] = {}
+    for score, percent in data.items():
+        actual_score = typing.cast(int, literal_eval(score))
+        if not isinstance(actual_score, (int, float)):
+            LOGGER.warning(
+                f"RNGdle: found key of type {type(actual_score)} with value {actual_score} while parsing score_to_percent.json"
+            )
+        elif (
+            isinstance(actual_score, float)
+            and int(actual_score) != actual_score
+        ):
+            LOGGER.warning(
+                f"RNGdle: found key with value {actual_score} (invalid score) while parsing score_to_percent.json"
+            )
+
+        evaluated_data[actual_score] = percent
+    return evaluated_data
+
+
 SCORE_TO_PERCENT: dict[int, float] = {}
 # Uncomment to fetch the JSON table
 # SCORE_TO_PERCENT = load_score_to_percent_table()
 KNOWN_SCORES = sorted(SCORE_TO_PERCENT.keys())
+
+COMPRESSED_SCORE_TO_PERCENT = load_compressed_score_to_percent_table()
+KNOWN_COMPRESSED_SCORES = sorted(COMPRESSED_SCORE_TO_PERCENT.keys())
 
 
 class Tier(Enum):
@@ -88,7 +119,6 @@ class Tier(Enum):
 #     Tier.EPIC: (194, 122, 255), # dark
 #     Tier.ANOMALY: (255, 137, 4), # dark
 #     Tier.MYTHIC: (193, 0, 7), # dark
-#     Tier.ERROR: (255, 0, 0),
 # }
 
 # From light theme
@@ -100,19 +130,18 @@ class Tier(Enum):
 #     Tier.EPIC: (218, 178, 255), # light
 #     Tier.ANOMALY: (255, 184, 106), # light
 #     Tier.MYTHIC: (253, 165, 213), # light
-#     Tier.ERROR: (255, 0, 0),
 # }
 
 # In use
 TIER_TO_COLOR = {
-    Tier.TRASH: (255, 210, 48),  # light
+    Tier.TRASH: (229, 126, 98),  # custom
     Tier.COMMON: (229, 231, 235),  # dark
     Tier.UNCOMMON: (94, 233, 181),  # light
     Tier.RARE: (142, 197, 255),  # light
     Tier.EPIC: (218, 178, 255),  # light
     Tier.ANOMALY: (255, 137, 4),  # dark
     Tier.MYTHIC: (253, 165, 213),  # light
-    Tier.ERROR: (255, 0, 0),
+    Tier.ERROR: (255, 41, 41),
 }
 
 
@@ -184,8 +213,27 @@ def get_tier_color(tier: Tier):
     return TIER_TO_COLOR[tier]
 
 
+def get_score_percent(score: int):
+    # Find the index to the highest know score that is lower than given score
+    score_idx = bisect.bisect_left(KNOWN_COMPRESSED_SCORES, score) - 1
+    score_idx = max(score_idx, 0)
+    percent_score = KNOWN_COMPRESSED_SCORES[score_idx]
+    # Return it's percent
+    return COMPRESSED_SCORE_TO_PERCENT[percent_score]
+
+
 def format_tier(tier: Tier):
     return f"{tier.name.title()}"
+
+
+def format_percent(score: int):
+    score_percent = get_score_percent(score)
+    if score_percent > 50:
+        beat_percent = 99 - score_percent
+        percent_text = f"Top {beat_percent}%"
+    else:
+        percent_text = f"Bottom {score_percent}%"
+    return percent_text
 
 
 class RNGdle:
