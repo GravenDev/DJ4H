@@ -155,7 +155,7 @@ def get_score_tier_from_table(score: int):
 
 def get_score_tier(score: int):
     if score < 0:
-        LOGGER.warning(f"RNGdle: unexpected score ({score}).")
+        LOGGER.warning(f"RNGdle: unexpected negative score ({score}).")
         return Tier.ERROR
 
     if 0 <= score < 2098:  # percent < 1.5
@@ -174,7 +174,9 @@ def get_score_tier(score: int):
         return Tier.MYTHIC
 
     # Score is too high
-    LOGGER.warning(f"RNGdle: unexpected score ({score}).")
+    LOGGER.warning(
+        f"RNGdle: unexpected score ({score}), higher than highest known score."
+    )
     return Tier.ERROR
 
 
