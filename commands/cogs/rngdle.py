@@ -7,6 +7,7 @@ from discord.ext import commands
 from config import MAGIC_COLOR
 from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao, RNGdleGuildConfigDao
+from utils.database.schema import RNGdle as RNGdleEntry
 from utils.image_generator import LeaderboardGenerator, RNGdleLeaderboardUser
 from utils.number_utils import format_number
 from utils.rngdle import (
@@ -145,15 +146,13 @@ class RNGdle(commands.Cog):
             return
 
         users: list[RNGdleLeaderboardUser] = []
-        for idx, score_col in enumerate(scores):
+        for score_col in scores:
             user = await get_or_fetch_user(self.bot, score_col.user_id)
             if user is None:
                 continue
 
             score = int(score_col.score)
             number = score_col.number
-            if idx == 0:  # FIX: Remove
-                number %= 1000
 
             u = RNGdleLeaderboardUser()
             u.user = user

@@ -36,7 +36,7 @@ class RNGdleLeaderboardUser(LeaderboardUser):
     tier_color: ColorType
 
     column_headers = ["Tirage", "Score", "Rareté"]
-    column_x_offsets = [500, 640, 810]
+    column_x_offsets = [500, 640, 820]
     # Can add an extrac width to be used as a margin spacer on the right of the image
     column_max_widths = [140, 130, 180, 20]
 

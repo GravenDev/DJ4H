@@ -62,7 +62,8 @@ def load_score_to_percent_table():
     return evaluated_data
 
 
-SCORE_TO_PERCENT = load_score_to_percent_table()
+# SCORE_TO_PERCENT = load_score_to_percent_table()
+SCORE_TO_PERCENT: dict[int, float] = {}
 KNOWN_SCORES = sorted(SCORE_TO_PERCENT.keys())
 
 
@@ -100,7 +101,7 @@ TIER_TO_EMOTE = {
 }
 
 
-def get_score_tier(score: int):
+def get_score_tier_from_table(score: int):
     if score not in SCORE_TO_PERCENT:
         LOGGER.warning(f"RNGdle: unexpected score {score} (not in table).")
 
@@ -114,7 +115,7 @@ def get_score_tier(score: int):
 
     percent = SCORE_TO_PERCENT[score]
 
-    if 0 <= percent < 2:
+    if 0 <= percent < 1.5:
         tier = Tier.TRASH
     elif percent < 50:
         tier = Tier.COMMON
@@ -135,6 +136,31 @@ def get_score_tier(score: int):
         return Tier.ERROR
 
     return tier
+
+
+def get_score_tier(score: int):
+    if score < 0:
+        LOGGER.warning(f"RNGdle: unexpected score ({score}).")
+        return Tier.ERROR
+
+    if 0 <= score < 2098:  # percent < 1.5
+        return Tier.TRASH
+    elif score < 5_349:  # percent < 50
+        return Tier.COMMON
+    elif score < 8_642:  # percent < 75
+        return Tier.UNCOMMON
+    elif score < 20_245:  # percent < 90
+        return Tier.RARE
+    elif score < 33_971:  # percent < 95
+        return Tier.EPIC
+    elif score < 150_679:  # percent < 99
+        return Tier.ANOMALY
+    elif score <= 181_186_584:  # percent < 100 (highest known score)
+        return Tier.MYTHIC
+
+    # Score is too high
+    LOGGER.warning(f"RNGdle: unexpected score ({score}).")
+    return Tier.ERROR
 
 
 def get_tier_color(tier: Tier):
