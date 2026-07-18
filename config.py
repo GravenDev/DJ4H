@@ -21,14 +21,14 @@ if DEBUG_GUILD_ID is not None:
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "dj4h.db")
 MAGIC_COLOR = 5220337
-# RNGdle sync interval in seconds (default 3600 = 1 hour)
-RNGDLE_SYNC_INTERVAL = int(os.getenv("RNGDLE_SYNC_INTERVAL", "3600"))
+# RNGdle sync interval in seconds (default 12 * 60 * 60s = 12 hours)
+RNGDLE_SYNC_INTERVAL = int(os.getenv("RNGDLE_SYNC_INTERVAL", str(12 * 60 * 60)))
 
 
 def setup_logging():
 
     current_path = pathlib.Path(__file__).parent.resolve()
-    config_file = pathlib.Path(f"{current_path}/log_config.json")
+    config_file = current_path / "log_config.json"
     os.makedirs("logs", exist_ok=True)
     with open(config_file) as f_in:
         config = json.load(f_in)

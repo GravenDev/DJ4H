@@ -62,8 +62,9 @@ def load_score_to_percent_table():
     return evaluated_data
 
 
-# SCORE_TO_PERCENT = load_score_to_percent_table()
 SCORE_TO_PERCENT: dict[int, float] = {}
+# Uncomment to fetch the JSON table
+# SCORE_TO_PERCENT = load_score_to_percent_table()
 KNOWN_SCORES = sorted(SCORE_TO_PERCENT.keys())
 
 
@@ -78,14 +79,39 @@ class Tier(Enum):
     ERROR = 8
 
 
+# From dark theme
+# TIER_TO_COLOR = {
+#     Tier.TRASH: (255, 210, 48), # dark
+#     Tier.COMMON: (229, 231, 235), # dark
+#     Tier.UNCOMMON: (0, 212, 146), # dark
+#     Tier.RARE: (81, 162, 255), # dark
+#     Tier.EPIC: (194, 122, 255), # dark
+#     Tier.ANOMALY: (255, 137, 4), # dark
+#     Tier.MYTHIC: (193, 0, 7), # dark
+#     Tier.ERROR: (255, 0, 0),
+# }
+
+# From light theme
+# TIER_TO_COLOR = {
+#     Tier.TRASH: (255, 210, 48), # light
+#     Tier.COMMON: (153, 161, 175), # light
+#     Tier.UNCOMMON: (94, 233, 181), # light
+#     Tier.RARE: (142, 197, 255), # light
+#     Tier.EPIC: (218, 178, 255), # light
+#     Tier.ANOMALY: (255, 184, 106), # light
+#     Tier.MYTHIC: (253, 165, 213), # light
+#     Tier.ERROR: (255, 0, 0),
+# }
+
+# In use
 TIER_TO_COLOR = {
-    Tier.TRASH: (255, 210, 48),
-    Tier.COMMON: (153, 161, 175),
-    Tier.UNCOMMON: (94, 233, 181),
-    Tier.RARE: (142, 197, 255),
-    Tier.EPIC: (218, 178, 255),
-    Tier.ANOMALY: (255, 184, 106),
-    Tier.MYTHIC: (253, 165, 213),
+    Tier.TRASH: (255, 210, 48),  # light
+    Tier.COMMON: (229, 231, 235),  # dark
+    Tier.UNCOMMON: (94, 233, 181),  # light
+    Tier.RARE: (142, 197, 255),  # light
+    Tier.EPIC: (218, 178, 255),  # light
+    Tier.ANOMALY: (255, 137, 4),  # dark
+    Tier.MYTHIC: (253, 165, 213),  # light
     Tier.ERROR: (255, 0, 0),
 }
 
