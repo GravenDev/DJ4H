@@ -115,17 +115,6 @@ TIER_TO_COLOR = {
     Tier.ERROR: (255, 0, 0),
 }
 
-TIER_TO_EMOTE = {
-    Tier.TRASH: "🟨",
-    Tier.COMMON: "⬜",
-    Tier.UNCOMMON: "🟩",
-    Tier.RARE: "🟦",
-    Tier.EPIC: "🟪",
-    Tier.ANOMALY: "🟧",
-    Tier.MYTHIC: "🟥",
-    Tier.ERROR: "❌",
-}
-
 
 def get_score_tier_from_table(score: int):
     if score not in SCORE_TO_PERCENT:
@@ -191,10 +180,6 @@ def get_score_tier(score: int):
 
 def get_tier_color(tier: Tier):
     return TIER_TO_COLOR[tier]
-
-
-def get_tier_emote(tier: Tier):
-    return TIER_TO_EMOTE[tier]
 
 
 def format_tier(tier: Tier):
