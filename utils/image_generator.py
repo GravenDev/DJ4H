@@ -33,16 +33,21 @@ class RNGdleLeaderboardUser(LeaderboardUser):
     tirage: str
     tier: Tier
     tier_text: str
+    percent: float
     percent_text: str
     tier_color: ColorType
 
-    column_headers = ["Tirage", "Rareté", "Score", "Placement"]
-    column_x_offsets = [500, 640, 840, 990]
+    column_headers = ["Tirage", "Score", "Placement"]
+    column_x_offsets = [500, 650, 810]
     # Can add an extrac width to be used as a margin spacer on the right of the image
-    column_max_widths = [140, 180, 130, 180, 20]
+    column_max_widths = [140, 130, 180, 20]
+    # column_headers = ["Tirage", "Rareté", "Score", "Placement"]
+    # column_x_offsets = [500, 640, 840, 990]
+    # # Can add an extrac width to be used as a margin spacer on the right of the image
+    # column_max_widths = [140, 180, 130, 180, 20]
 
     def get_column_values(self) -> list[str]:
-        return [self.tirage, self.tier_text, self.score, self.percent_text]
+        return [self.tirage, self.score, self.percent_text]
 
 
 class JD4HLeaderboardUser(LeaderboardUser):
@@ -98,6 +103,29 @@ class LeaderboardGenerator:
             .resize((50, 50))
         )
 
+        self._ARROW_UP = Image.open(
+            self.base_path / "rngdle" / "arrow_up.png"
+        ).resize((40, 40))
+
+        self._TRASH = (
+            Image.open(self.base_path / "rngdle" / "trash.png")
+            .convert("RGBA")
+            .resize((40, 40))
+        )
+
+        self.ARROW_UP_EVEN = self._color_transparent_background(
+            self._ARROW_UP, self.ROW_EVEN_COLOR
+        )
+        self.ARROW_UP_ODD = self._color_transparent_background(
+            self._ARROW_UP, self.ROW_ODD_COLOR
+        )
+        self.TRASH_EVEN = self._color_transparent_background(
+            self._TRASH, self.ROW_EVEN_COLOR
+        )
+        self.TRASH_ODD = self._color_transparent_background(
+            self._TRASH, self.ROW_ODD_COLOR
+        )
+
         try:
             self.font_path = self.base_path / "font" / "outfit.ttf"
             self.font_header = ImageFont.truetype(self.font_path, 40)
@@ -116,6 +144,48 @@ class LeaderboardGenerator:
             self.font_small = ImageFont.load_default()
 
             self.font_mono_regular = ImageFont.load_default()
+
+    def _color_transparent_background(
+        self, base_image: Image.Image, new_background: ColorType
+    ):
+        channels = [img.getdata() for img in base_image.split()]
+
+        new_data: list[ColorType] = []
+        for r, g, b, a in zip(*channels):
+            if a == 0:
+                r, g, b = new_background
+            new_data.append((r, g, b))
+
+        new_image = base_image.convert("RGB")
+        new_image.putdata(new_data)
+        return new_image
+
+    def _get_fitted_text_font(
+        self,
+        draw: ImageDraw.ImageDraw,
+        text: str,
+        max_width: float,
+        base_font: FontType,
+    ):
+        if self.font_path is None:
+            return base_font
+        font = base_font
+        font_path = getattr(font, "path", self.font_path)
+        font_size = getattr(font, "size", 30)  # 30 is regular font size
+        while draw.textlength(text, font=font) > max_width and font_size > 1:
+            font_size -= 1
+            font = ImageFont.truetype(font_path, font_size)
+        return font
+
+    def _get_fittex_text_length(
+        self,
+        draw: ImageDraw.ImageDraw,
+        text: str,
+        max_width: float,
+        base_font: FontType,
+    ):
+        font = self._get_fitted_text_font(draw, text, max_width, base_font)
+        return draw.textlength(text, font=font)
 
     def _draw_fitted(
         self,
@@ -310,7 +380,7 @@ class LeaderboardGenerator:
                 self.TEXT_COLOR,
             )
 
-            for col_idx, col_value in enumerate(user.get_column_values()):
+            for col_idx, col_text in enumerate(user.get_column_values()):
                 col_x = model.column_x_offsets[col_idx]
                 col_y = y_pos + (self.ROW_HEIGHT / 2) - 15
                 max_width = model.column_max_widths[col_idx]
@@ -318,20 +388,54 @@ class LeaderboardGenerator:
                 font = self.font_regular
                 text_color = self.TEXT_COLOR
 
-                if isinstance(user, RNGdleLeaderboardUser):
+                draw_func = self._draw_fitted
+
+                if model == RNGdleLeaderboardUser:
+
+                    draw_func = self._draw_fitted_align_right
+
+                    user = typing.cast(RNGdleLeaderboardUser, user)
 
                     if user.column_headers[col_idx] == "Tirage":  # RNGdle draw
                         # Left pad the number string to be at least 7 chars long for even rendering
-                        col_value = f"{col_value:>7}"
+                        col_text = f"{col_text:>7}"
                         font = self.font_mono_regular
                         text_color = user.tier_color
 
                     elif user.column_headers[col_idx] == "Rareté":
                         text_color = user.tier_color
 
-                self._draw_fitted_align_right(
+                    elif user.column_headers[col_idx] == "Placement":
+                        text_color = user.tier_color
+
+                        if user.percent > 50:
+                            arrow_img = (
+                                self.ARROW_UP_EVEN
+                                if user.rank % 2
+                                else self.ARROW_UP_ODD
+                            )
+                        else:
+                            arrow_img = (
+                                self.TRASH_EVEN
+                                if user.rank % 2
+                                else self.TRASH_ODD
+                            )
+
+                        text_length = self._get_fittex_text_length(
+                            draw, col_text, max_width, font
+                        )
+                        text_x_right = col_x + max_width
+                        text_x_left = text_x_right - text_length
+                        arrow_x_right = text_x_left - 10
+                        arrow_x_left = int(arrow_x_right - arrow_img.width)
+                        arrow_y_top = int(col_y - 10)
+                        draw._image.paste(
+                            arrow_img, (arrow_x_left, arrow_y_top)
+                        )
+
+                draw_func(
                     draw,
-                    col_value,
+                    col_text,
                     col_x,
                     col_y,
                     max_width,

@@ -226,13 +226,14 @@ def format_tier(tier: Tier):
     return f"{tier.name.title()}"
 
 
-def format_percent(score: int):
-    score_percent = get_score_percent(score)
-    if score_percent > 50:
-        beat_percent = 99 - score_percent
-        percent_text = f"Top {beat_percent}%"
+def format_percent(percent: int):
+    if percent > 50:
+        beat_percent = 99 - percent
+        percent_text = f"{beat_percent}%"
+        # percent_text = f"Top {beat_percent}%"
     else:
-        percent_text = f"Bottom {score_percent}%"
+        percent_text = f"{percent}%"
+        # percent_text = f"Bottom {percent}%"
     return percent_text
 
 

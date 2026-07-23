@@ -13,6 +13,7 @@ from utils.number_utils import format_number
 from utils.rngdle import (
     format_percent,
     format_tier,
+    get_score_percent,
     get_score_tier,
     get_tier_color,
 )
@@ -162,7 +163,8 @@ class RNGdle(commands.Cog):
             u.rank = len(users) + 1
             u.tier = get_score_tier(score)
             u.tier_text = format_tier(u.tier)
-            u.percent_text = format_percent(score)
+            u.percent = get_score_percent(score)
+            u.percent_text = format_percent(int(u.percent))
             u.tier_color = get_tier_color(u.tier)
             users.append(u)
 
