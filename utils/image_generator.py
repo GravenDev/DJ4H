@@ -127,9 +127,9 @@ class LeaderboardGenerator:
             .resize((50, 50))
         )
 
-        self._ARROW_UP = Image.open(
-            self.base_path / "rngdle" / "arrow_up.png"
-        ).resize((40, 40))
+        self._ARROW_UP = Image.open(self.base_path / "rngdle" / "arrow_up.png").resize(
+            (40, 40)
+        )
 
         self._TRASH = (
             Image.open(self.base_path / "rngdle" / "trash.png")
@@ -264,9 +264,7 @@ class LeaderboardGenerator:
         min_possible_width = self.WIDTH
         if model.column_x_offsets:
             last_start_pos = model.column_x_offsets[-1]
-            has_spacer = len(model.column_x_offsets) != len(
-                model.column_max_widths
-            )
+            has_spacer = len(model.column_x_offsets) != len(model.column_max_widths)
             last_width = (
                 model.column_max_widths[-2]
                 if has_spacer
@@ -277,9 +275,7 @@ class LeaderboardGenerator:
 
             min_possible_width = max(min_possible_width, total_width)
 
-        img = Image.new(
-            "RGB", (min_possible_width, total_height), self.BG_COLOR
-        )
+        img = Image.new("RGB", (min_possible_width, total_height), self.BG_COLOR)
         draw = ImageDraw.Draw(img)
 
         draw.rectangle(
@@ -310,9 +306,7 @@ class LeaderboardGenerator:
         for user in users:
             y_pos = self.HEADER_HEIGHT + ((user.rank - 1) * self.ROW_HEIGHT)
             row_color = (
-                self.ROW_EVEN_COLOR
-                if (user.rank - 1) % 2 == 0
-                else self.ROW_ODD_COLOR
+                self.ROW_EVEN_COLOR if (user.rank - 1) % 2 == 0 else self.ROW_ODD_COLOR
             )
             draw.rectangle(
                 [0, y_pos, min_possible_width, y_pos + self.ROW_HEIGHT],
@@ -440,9 +434,7 @@ class LeaderboardGenerator:
                             )
                         else:
                             arrow_img = (
-                                self.TRASH_EVEN
-                                if user.rank % 2
-                                else self.TRASH_ODD
+                                self.TRASH_EVEN if user.rank % 2 else self.TRASH_ODD
                             )
 
                         text_length = self._get_fittex_text_length(
@@ -453,9 +445,7 @@ class LeaderboardGenerator:
                         arrow_x_right = text_x_left - 10
                         arrow_x_left = int(arrow_x_right - arrow_img.width)
                         arrow_y_top = int(col_y - 10)
-                        draw._image.paste(
-                            arrow_img, (arrow_x_left, arrow_y_top)
-                        )
+                        draw._image.paste(arrow_img, (arrow_x_left, arrow_y_top))
 
                 draw_func(
                     draw,

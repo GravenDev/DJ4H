@@ -8,7 +8,8 @@ from config import MAGIC_COLOR
 from utils import get_or_fetch_user
 from utils.database.dao.rngdle import RNGdleDao, RNGdleGuildConfigDao
 from utils.image_generator import LeaderboardGenerator, RNGdleLeaderboardUser
-from utils.tasks.rngdle_sync import rngdle_fetch_with_cooldown, sync_guild_users
+from utils.tasks.rngdle_sync import sync_guild_users
+from utils.tasks.rngdle_sync import rngdle_fetch_with_cooldown
 
 
 class RNGdle(commands.Cog):
@@ -64,9 +65,7 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
-    @rngdle_admin.command(
-        description="Set the channel for daily RNGDLE leaderboard"
-    )
+    @rngdle_admin.command(description="Set the channel for daily RNGDLE leaderboard")
     @discord.default_permissions(administrator=True)
     async def setleaderboard(
         self,
@@ -79,9 +78,7 @@ class RNGdle(commands.Cog):
             await ctx.respond("This command can only be used in a server!")
             return
 
-        await RNGdleGuildConfigDao.set_leaderboard_channel(
-            ctx.guild.id, channel.id
-        )
+        await RNGdleGuildConfigDao.set_leaderboard_channel(ctx.guild.id, channel.id)
         message = discord.Embed(
             title="RNGdle Leaderboard Channel",
             color=discord.Colour(MAGIC_COLOR),
