@@ -6,7 +6,15 @@ import discord
 from PIL import Image, ImageDraw, ImageFont
 
 from config import LOGGER
-from utils.rngdle import Tier
+from utils.number_utils import format_number
+from utils.rngdle import (
+    Tier,
+    format_percent,
+    format_tier,
+    get_score_percent,
+    get_score_tier,
+    get_tier_color,
+)
 
 SPACE_WIDTH = 8
 NUM_WIDTH = 18.5
@@ -48,6 +56,22 @@ class RNGdleLeaderboardUser(LeaderboardUser):
 
     def get_column_values(self) -> list[str]:
         return [self.tirage, self.score, self.percent_text]
+
+    @classmethod
+    def create_user_instance(
+        cls, user: discord.User, score: int, number: int, rank: int
+    ):
+        new_user = cls()
+        new_user.user = user
+        new_user.score = format_number(score)
+        new_user.tirage = f"{number:,}".replace(",", " ")
+        new_user.rank = rank
+        new_user.tier = get_score_tier(score)
+        new_user.tier_text = format_tier(new_user.tier)
+        new_user.percent = get_score_percent(score)
+        new_user.percent_text = format_percent(int(new_user.percent))
+        new_user.tier_color = get_tier_color(new_user.tier)
+        return new_user
 
 
 class JD4HLeaderboardUser(LeaderboardUser):

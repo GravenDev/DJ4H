@@ -12,7 +12,6 @@ from utils.database.dao.rngdle import (
     get_yesterday_range,
 )
 from utils.image_generator import LeaderboardGenerator, RNGdleLeaderboardUser
-from utils.number_utils import format_number
 
 
 @tasks.loop(time=time(hour=0, minute=0, tzinfo=timezone.utc))
@@ -50,12 +49,13 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
 
         generator = LeaderboardGenerator()
         leaderboard_users: list[RNGdleLeaderboardUser] = []
-        for user, score, rank in zip(users, scores, range(len(users))):
-            u = RNGdleLeaderboardUser()
-            u.user = user
-            u.score = format_number(score.score)
-            u.tirage = f"{score.number:,}".replace(",", " ")
-            u.rank = rank + 1
+        for user, score_col, rank in zip(users, scores, range(len(users))):
+
+            score = int(score_col.score)
+            number = int(score_col.number)
+            u = RNGdleLeaderboardUser.create_user_instance(
+                user, score, number, rank + 1
+            )
             leaderboard_users.append(u)
 
         generated = await generator.generate_leaderboard(leaderboard_users)
@@ -71,7 +71,7 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
             if score.score == top_score
         ]
         mentions = " ".join(
-            u.mention for u in top_users if u.user.id != 610843701861679108
+            u.mention for u in top_users if u.id != 610843701861679108
         )
 
         await channel.send(
