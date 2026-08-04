@@ -102,6 +102,27 @@ class Tier(Enum):
     MYTHIC = 7
     ERROR = 8
 
+# From dark theme
+# TIER_TO_COLOR = {
+#     Tier.TRASH: (255, 210, 48), # dark
+#     Tier.COMMON: (229, 231, 235), # dark
+#     Tier.UNCOMMON: (0, 212, 146), # dark
+#     Tier.RARE: (81, 162, 255), # dark
+#     Tier.EPIC: (194, 122, 255), # dark
+#     Tier.ANOMALY: (255, 137, 4), # dark
+#     Tier.MYTHIC: (193, 0, 7), # dark
+# }
+
+# From light theme
+# TIER_TO_COLOR = {
+#     Tier.TRASH: (255, 210, 48), # light
+#     Tier.COMMON: (153, 161, 175), # light
+#     Tier.UNCOMMON: (94, 233, 181), # light
+#     Tier.RARE: (142, 197, 255), # light
+#     Tier.EPIC: (218, 178, 255), # light
+#     Tier.ANOMALY: (255, 184, 106), # light
+#     Tier.MYTHIC: (253, 165, 213), # light
+# }
 
 # In use
 TIER_TO_COLOR = {
@@ -119,6 +140,10 @@ TIER_TO_COLOR = {
 def get_score_tier_from_table(score: int):
     if score not in SCORE_TO_PERCENT:
         LOGGER.warning(f"RNGdle: unexpected score {score} (not in table).")
+        # Enable if you prefer to not consider unknown scores
+        # return Tier.ERROR
+
+        # Find the highest known score that is below the given score and consider it for selecting the tier
         fixed_score_idx = bisect.bisect_left(KNOWN_SCORES, score) - 1
         fixed_score_idx = max(fixed_score_idx, 0)
         score = KNOWN_SCORES[fixed_score_idx]
@@ -196,8 +221,10 @@ def format_percent(percent: int):
     if percent > 50:
         beat_percent = 99 - percent
         percent_text = f"{beat_percent}%"
+        # percent_text = f"Top {beat_percent}%"
     else:
         percent_text = f"{percent}%"
+        # percent_text = f"Bottom {percent}%"
     return percent_text
 
 
