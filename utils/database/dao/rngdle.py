@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
 from sqlalchemy.sql.expression import select
+from sqlalchemy import func
 
 from utils.database import RNGdle, RNGdleGuildConfig, RNGdleUser, get_db
 
@@ -30,7 +31,6 @@ class RNGdleDao:
     @staticmethod
     async def register_user(user_id: int, guild_id: int, username: str) -> None:
         async for session in get_db():
-            # Try to find an existing entry for this user in this guild
             existing = await session.execute(
                 select(RNGdleUser).filter(
                     RNGdleUser.user_id == user_id,
@@ -40,15 +40,12 @@ class RNGdleDao:
             existing_row = existing.scalars().first()
 
             if existing_row is not None:
-                # Update the username if it changed
                 if existing_row.rng_username != username:
                     existing_row.rng_username = username
                     session.add(existing_row)
                     await session.commit()
-                # else: nothing to do
                 return
 
-            # No existing entry -> create one
             rngdle_user = RNGdleUser(
                 user_id=user_id, guild_id=guild_id, rng_username=username
             )
@@ -82,11 +79,10 @@ class RNGdleDao:
         date: int,
         score: int,
         number: int,
+        badges: int,
     ) -> bool:
         """
         INSERT a roll into RNGdle history if it does not already exist.
-        Returns True if inserted, False if an identical roll already exists.
-        We consider a roll identical if user_id + date + number match an existing row.
         """
         async for session in get_db():
             existing = await session.execute(
@@ -106,6 +102,7 @@ class RNGdleDao:
                 date=date,
                 score=score,
                 number=number,
+                badge_count=badges,
             )
             session.add(rng)
             await session.commit()
@@ -115,7 +112,6 @@ class RNGdleDao:
     async def get_today_scores(
         guild_id: int,
     ) -> Sequence[RNGdle] | None:
-        # Match the stored int date format: YYYYMMDD
         start_ts, end_ts = get_today_range()
 
         async for session in get_db():
@@ -153,6 +149,34 @@ class RNGdleDao:
             return rows.scalars().all()
 
         return None
+
+    @staticmethod
+    async def get_user_rolls(user_id: int, guild_id: int) -> Sequence[RNGdle] | None:
+        async for session in get_db():
+            query = select(RNGdle).filter(
+                RNGdle.user_id == user_id,
+                RNGdle.guild_id == guild_id
+            )
+            rows = await session.execute(query)
+            return rows.scalars().all()
+        return None
+
+    @staticmethod
+    async def get_server_rank_by_total(user_id: int, guild_id: int) -> int:
+        async for session in get_db():
+            query = (
+                select(RNGdle.user_id, func.sum(RNGdle.score).label("total_score"))
+                .filter(RNGdle.guild_id == guild_id)
+                .group_by(RNGdle.user_id)
+                .order_by(func.sum(RNGdle.score).desc())
+            )
+            rows = await session.execute(query)
+            leaderboard = rows.all()
+            
+            for rank, row in enumerate(leaderboard, start=1):
+                if row.user_id == user_id:
+                    return rank
+        return 0
 
 
 class RNGdleGuildConfigDao:

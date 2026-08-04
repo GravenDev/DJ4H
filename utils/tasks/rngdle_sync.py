@@ -46,12 +46,13 @@ async def _process_user(
                     date=roll.date,
                     score=roll.score,
                     number=roll.number,
+                    badges=roll.badges
                 )
                 if inserted:
                     processed += 1
                     if log_mode == "background":
                         LOGGER.info(
-                            f"Stored/updated rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number}"
+                            f"Stored/updated rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
                         )
             except Exception:
                 failed += 1
