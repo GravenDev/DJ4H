@@ -47,7 +47,12 @@ class RNGdleLeaderboardUser(LeaderboardUser):
 
     column_headers = ["Tirage", "Score", "Placement"]
     column_x_offsets = [500, 650, 810]
+    # Can add an extrac width to be used as a margin spacer on the right of the image
     column_max_widths = [140, 130, 180, 20]
+    # column_headers = ["Tirage", "Rareté", "Score", "Placement"]
+    # column_x_offsets = [500, 640, 840, 990]
+    # # Can add an extrac width to be used as a margin spacer on the right of the image
+    # column_max_widths = [140, 180, 130, 180, 20]
 
     def get_column_values(self) -> list[str]:
         return [self.tirage, self.score, self.percent_text]
@@ -89,12 +94,14 @@ class LeaderboardGenerator:
     ROW_HEIGHT: int = 90
     HEADER_HEIGHT: int = 100
 
-    BG_COLOR: ColorType = (25, 25, 25)
-    TEXT_COLOR: ColorType = (255, 255, 255)
+    # Slightly lighter header background
+    BG_COLOR: ColorType = (25, 25, 25) # Dark background
+    TEXT_COLOR: ColorType = (255, 255, 255) # White text
+    
     HEADER_BG_COLOR: ColorType = (50, 50, 50)
-    ROW_EVEN_COLOR: ColorType = (35, 35, 35)
-    ROW_ODD_COLOR: ColorType = (45, 45, 45)
-    HIGHLIGHT_COLOR: ColorType = (0, 100, 200)
+    ROW_EVEN_COLOR: ColorType = (35, 35, 35) # Even row background
+    ROW_ODD_COLOR: ColorType = (45, 45, 45) # Odd row background
+    HIGHLIGHT_COLOR: ColorType = (0, 100, 200) # For "async" button
 
     def __init__(self):
         self.font_path: pathlib.Path | None = None
@@ -189,7 +196,7 @@ class LeaderboardGenerator:
             return base_font
         font = base_font
         font_path = getattr(font, "path", self.font_path)
-        font_size = getattr(font, "size", 30)
+        font_size = getattr(font, "size", 30) # 30 is regular font size
         while draw.textlength(text, font=font) > max_width and font_size > 1:
             font_size -= 1
             font = ImageFont.truetype(font_path, font_size)
@@ -221,7 +228,7 @@ class LeaderboardGenerator:
             return
         font = base_font
         font_path = getattr(font, "path", self.font_path)
-        font_size = getattr(font, "size", 30)
+        font_size = getattr(font, "size", 30) # 30 is regular font size
         while draw.textlength(text, font=font) > max_width and font_size > 1:
             font_size -= 1
             font = ImageFont.truetype(font_path, font_size)
@@ -286,6 +293,7 @@ class LeaderboardGenerator:
 
             anchor = "lt"
             if model == RNGdleLeaderboardUser and i >= 2:
+                 # Anchor to the right and fix the x position for the text
                 anchor = "rt"
                 x += model.column_max_widths[i - 2]
 
@@ -406,7 +414,8 @@ class LeaderboardGenerator:
                     draw_func = self._draw_fitted_align_right
                     user = typing.cast(RNGdleLeaderboardUser, user)
 
-                    if user.column_headers[col_idx] == "Tirage":
+                    if user.column_headers[col_idx] == "Tirage": # RNGdle draw
+                        # Left pad the number string to be at least 7 chars long for even rendering
                         col_text = f"{col_text:>7}"
                         font = self.font_mono_regular
                         text_color = user.tier_color
