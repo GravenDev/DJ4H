@@ -131,7 +131,8 @@ class RNGdle(commands.Cog):
         if ctx.guild is None:
             await ctx.respond("This command can only be used in a server!")
             return
-
+            
+        # Fetch rolls before accessing them
         await rngdle_fetch_with_cooldown()
 
         scores = await RNGdleDao.get_today_scores(ctx.guild.id)
