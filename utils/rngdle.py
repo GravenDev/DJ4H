@@ -142,7 +142,7 @@ def compress_score_to_percent(dico: dict[int, float]) -> dict[int, float]:
     # Compute a dict that stores for each percent which is the lowest score to reach that percent
     percent_to_score_min: dict[float, int] = {}
     for score, percent in dico.items():
-        percent_rounded = int(percent * 2) / 2
+        percent_rounded = int(percent * 2) / 2  # truncate to the previous .5
         if score < percent_to_score_min.get(percent_rounded, float("inf")):
             percent_to_score_min[percent_rounded] = score
 
@@ -295,6 +295,7 @@ class RNGdle:
 
 if __name__ == "__main__":
 
+    # Perform some operations on rngdle resources to test updates mechanisms
     arg_parser = argparse.ArgumentParser()
 
     arg_parser.add_argument(
