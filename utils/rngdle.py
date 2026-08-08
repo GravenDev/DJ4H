@@ -1,14 +1,22 @@
-﻿from ast import literal_eval
+﻿import argparse
+from ast import literal_eval
 import bisect
 from datetime import datetime
 from enum import Enum
 import json
 from pathlib import Path
+import re
 import typing
 
 import requests
 
 from config import LOGGER
+
+ROOT_PATH = Path(__file__).parent.parent
+SCORE_TO_PERCENT_PATH = ROOT_PATH / "ressources" / "rngdle" / "score_to_percent.json"
+COMPRESSED_SCORE_TO_PERCENT_PATH = SCORE_TO_PERCENT_PATH.with_stem(
+    "compressed_score_to_percent"
+)
 
 
 class UserRolls:
@@ -35,16 +43,20 @@ def to_timestamp(date):
     return timestamp
 
 
-def load_score_to_percent_table():
+def parse_score_to_percent_table(data: str) -> dict[str, str]:
+    ENTRY_RE = re.compile(r"(\w+)\s*:\s*(\d*(?:\.\d+)?)")
+    table: dict[str, str] = {
+        score: percent for score, percent in ENTRY_RE.findall(data)
+    }
+    return table
 
-    root_path = Path(__file__).parent.parent
-    rngdle_resources = root_path / "ressources" / "rngdle"
-    with open(rngdle_resources / "score_to_percent.json", mode="r") as file:
-        data = json.load(file)
 
+def evaluate_score_to_percent_table(table: dict[str, str]) -> dict[int, float]:
     evaluated_data: dict[int, float] = {}
-    for score, percent in data.items():
+    for score, percent in table.items():
         actual_score = typing.cast(int, literal_eval(score))
+        actual_percent = typing.cast(float, literal_eval(percent))
+
         if not isinstance(actual_score, (int, float)):
             LOGGER.warning(
                 f"RNGdle: found key of type {type(actual_score)} with value {actual_score} while parsing score_to_percent.json"
@@ -54,31 +66,86 @@ def load_score_to_percent_table():
                 f"RNGdle: found key with value {actual_score} (invalid score) while parsing score_to_percent.json"
             )
 
-        evaluated_data[actual_score] = percent
+        evaluated_data[actual_score] = actual_percent
     return evaluated_data
+
+
+def fetch_score_to_percent_string():
+
+    TABLE_FILE_URL = "https://www.rngdle.com/_next/static/chunks/13342e749f60f9c2.js"
+
+    js_file = requests.get(TABLE_FILE_URL).content
+
+    if len(js_file) < 100_000:
+        LOGGER.warning(
+            f"The file *seems* too small to contain the score to percent table ({len(js_file)} < 100 KB)"
+        )
+        return ""
+
+    # Detect the score percentiles dict-like structure
+    dict_pattern = re.compile(
+        r"{(?:(?:0x[a-fA-F0-9]+|\d+|\d+e\d+)\s*:\s*(?:\d+(?:\.\d+)?|\.\d+),?)+}"
+    )
+    result = dict_pattern.search(str(js_file))
+    if result is None:
+        return ""
+
+    return result.group()
+
+
+def load_score_to_percent_table():
+
+    with open(SCORE_TO_PERCENT_PATH) as file:
+        data_raw = file.read()
+
+    parsed_table = parse_score_to_percent_table(data_raw)
+    return evaluate_score_to_percent_table(parsed_table)
 
 
 def load_compressed_score_to_percent_table():
-
-    root_path = Path(__file__).parent.parent
-    rngdle_resources = root_path / "ressources" / "rngdle"
-    with open(rngdle_resources / "compressed_score_to_percent.json", mode="r") as file:
+    with open(COMPRESSED_SCORE_TO_PERCENT_PATH) as file:
         data = json.load(file)
+    score_to_percent_table: dict[int, int] = {
+        int(score): percent for score, percent in data.items()
+    }
+    return score_to_percent_table
 
-    evaluated_data: dict[int, float] = {}
-    for score, percent in data.items():
-        actual_score = typing.cast(int, literal_eval(score))
-        if not isinstance(actual_score, (int, float)):
-            LOGGER.warning(
-                f"RNGdle: found key of type {type(actual_score)} with value {actual_score} while parsing score_to_percent.json"
-            )
-        elif isinstance(actual_score, float) and int(actual_score) != actual_score:
-            LOGGER.warning(
-                f"RNGdle: found key with value {actual_score} (invalid score) while parsing score_to_percent.json"
-            )
 
-        evaluated_data[actual_score] = percent
-    return evaluated_data
+def store_compressed_score_to_percent_table(new_table: dict[int, int]):
+    COMPRESSED_SCORE_TO_PERCENT = new_table
+    KNOWN_COMPRESSED_SCORES = sorted(COMPRESSED_SCORE_TO_PERCENT.keys())
+
+    with open(COMPRESSED_SCORE_TO_PERCENT_PATH, "w") as file:
+        json.dump(new_table, file)
+
+
+def update_compressed_score_to_percent_table():
+    score_to_percent_raw = fetch_score_to_percent_string()
+    if not score_to_percent_raw:
+        LOGGER.warning(
+            "Could not fetch the score to percent table from the website, aborting the update"
+        )
+        return
+    score_to_percent_parsed = parse_score_to_percent_table(score_to_percent_raw)
+    score_to_percent_table = evaluate_score_to_percent_table(score_to_percent_parsed)
+    compressed_score_to_percent = compress_score_to_percent(score_to_percent_table)
+    store_compressed_score_to_percent_table(compressed_score_to_percent)
+
+
+def compress_score_to_percent(dico: dict[int, float]) -> dict[int, int]:
+
+    # Compute a dict that stores for each percent which is the lowest score to reach that percent
+    percent_to_score_min: dict[int, int] = {}
+    for score, percent in dico.items():
+        percent_int = int(percent)
+        if score < percent_to_score_min.get(percent_int, float("inf")):
+            percent_to_score_min[percent_int] = score
+
+    # Invert the dict to get a score that serves as a lower bound to determine the percent
+    compressed_dico = {
+        score: percent for percent, score in percent_to_score_min.items()
+    }
+    return compressed_dico
 
 
 SCORE_TO_PERCENT: dict[int, float] = {}
@@ -136,19 +203,13 @@ TIER_TO_COLOR = {
 }
 
 
-def get_score_tier_from_table(score: int):
-    if score not in SCORE_TO_PERCENT:
-        LOGGER.warning(f"RNGdle: unexpected score {score} (not in table).")
+def get_score_tier_from_compressed_table(score: int):
 
-        # Enable if you prefer to not consider unknown scores
-        # return Tier.ERROR
+    if score < 0:
+        LOGGER.warning(f"RNGdle: unexpected negative score ({score}).")
+        return Tier.ERROR
 
-        # Find the highest known score that is below the given score and consider it for selecting the tier
-        fixed_score_idx = bisect.bisect_left(KNOWN_SCORES, score) - 1
-        fixed_score_idx = max(fixed_score_idx, 0)
-        score = KNOWN_SCORES[fixed_score_idx]
-
-    percent = SCORE_TO_PERCENT[score]
+    percent = get_score_percent(score)
 
     if 0 <= percent < 1.5:
         tier = Tier.TRASH
@@ -174,30 +235,7 @@ def get_score_tier_from_table(score: int):
 
 
 def get_score_tier(score: int):
-    if score < 0:
-        LOGGER.warning(f"RNGdle: unexpected negative score ({score}).")
-        return Tier.ERROR
-
-    if 0 <= score < 2098:  # percent < 1.5
-        return Tier.TRASH
-    elif score < 5_349:  # percent < 50
-        return Tier.COMMON
-    elif score < 8_642:  # percent < 75
-        return Tier.UNCOMMON
-    elif score < 20_245:  # percent < 90
-        return Tier.RARE
-    elif score < 33_971:  # percent < 95
-        return Tier.EPIC
-    elif score < 150_679:  # percent < 99
-        return Tier.ANOMALY
-    elif score <= 181_186_584:  # percent < 100 (highest known score)
-        return Tier.MYTHIC
-
-    # Score is too high
-    LOGGER.warning(
-        f"RNGdle: unexpected score ({score}), higher than highest known score."
-    )
-    return Tier.ERROR
+    return get_score_tier_from_compressed_table(score)
 
 
 def get_tier_color(tier: Tier):
@@ -221,10 +259,8 @@ def format_percent(percent: int):
     if percent > 50:
         beat_percent = 99 - percent
         percent_text = f"{beat_percent}%"
-        # percent_text = f"Top {beat_percent}%"
     else:
         percent_text = f"{percent}%"
-        # percent_text = f"Bottom {percent}%"
     return percent_text
 
 
@@ -249,3 +285,32 @@ class RNGdle:
             return previous_roll
         else:
             return None
+
+
+if __name__ == "__main__":
+
+    arg_parser = argparse.ArgumentParser()
+
+    arg_parser.add_argument(
+        "-c",
+        "--compress-score-table",
+        help="Read, compress and store the score to percent table. This should only be used locally as it requires having the full table stored. Instead, consider using --update-score-table that fetches the table from the website",
+        action="store_true",
+    )
+
+    arg_parser.add_argument(
+        "-u",
+        "--update-score-table",
+        help="Fetch, compress and store the score to percent table",
+        action="store_true",
+    )
+
+    args = arg_parser.parse_args()
+
+    if args.compress_score_table:
+        base_score_to_percent = load_score_to_percent_table()
+        compressed_score_to_percent = compress_score_to_percent(base_score_to_percent)
+        store_compressed_score_to_percent_table(compressed_score_to_percent)
+
+    if args.update_score_table:
+        update_compressed_score_to_percent_table()
