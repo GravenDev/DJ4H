@@ -69,7 +69,7 @@ class RNGdleLeaderboardUser(LeaderboardUser):
         new_user.tier = get_score_tier(score)
         new_user.tier_text = format_tier(new_user.tier)
         new_user.percent = get_score_percent(score)
-        new_user.percent_text = format_percent(int(new_user.percent))
+        new_user.percent_text = format_percent(new_user.percent)
         new_user.tier_color = get_tier_color(new_user.tier)
         return new_user
 

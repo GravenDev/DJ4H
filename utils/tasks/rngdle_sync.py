@@ -3,9 +3,12 @@ import traceback
 
 from discord.ext import tasks
 
-from config import LOGGER, RNGDLE_SYNC_INTERVAL
+from config import LOGGER, RNGDLE_SYNC_INTERVAL, RNGDLE_TABLE_SYNC_INTERVAL
 from utils.database.dao.rngdle import RNGdleDao
-from utils.rngdle import RNGdle as RNGdleClient
+from utils.rngdle import (
+    RNGdle as RNGdleClient,
+    update_compressed_score_to_percent_table,
+)
 
 # Register when the last sync was done, used for fetching cooldown
 _last_rngdle_sync = datetime.datetime.fromtimestamp(0)
@@ -69,13 +72,24 @@ async def _process_user(
 
 @tasks.loop(seconds=RNGDLE_SYNC_INTERVAL)
 async def rngdle_autosync_task() -> None:
-    """Every hour fetch all registered users and sync their rolls."""
+    """Every 12 hours, fetch all registered users and sync their rolls."""
     return await rngdle_fetch_task()
 
 
 @rngdle_autosync_task.error
 async def on_rngdle_sync_error(exc: Exception) -> None:
     LOGGER.error(f"RNGdle sync task error: {exc}")
+
+
+@tasks.loop(seconds=RNGDLE_TABLE_SYNC_INTERVAL)
+async def rngdle_score_to_percent_autoupdate_task() -> None:
+    """Every week, update the RNGdle score to percent table."""
+    return update_compressed_score_to_percent_table()
+
+
+@rngdle_score_to_percent_autoupdate_task.error
+async def on_rngdle_sync_error(exc: Exception) -> None:
+    LOGGER.error(f"RNGdle table update task error: {exc}")
 
 
 async def rngdle_fetch_task() -> None:

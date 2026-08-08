@@ -4,6 +4,7 @@ import bisect
 from datetime import datetime
 from enum import Enum
 import json
+from math import ceil, floor
 from pathlib import Path
 import re
 import typing
@@ -78,7 +79,7 @@ def fetch_score_to_percent_string():
 
     if len(js_file) < 100_000:
         LOGGER.warning(
-            f"The file *seems* too small to contain the score to percent table ({len(js_file)} < 100 KB)"
+            f"RNGdle: The file *seems* too small to contain the score to percent table ({len(js_file)} < 100 KB)"
         )
         return ""
 
@@ -105,13 +106,15 @@ def load_score_to_percent_table():
 def load_compressed_score_to_percent_table():
     with open(COMPRESSED_SCORE_TO_PERCENT_PATH) as file:
         data = json.load(file)
-    score_to_percent_table: dict[int, int] = {
+    score_to_percent_table: dict[int, float] = {
         int(score): percent for score, percent in data.items()
     }
     return score_to_percent_table
 
 
-def store_compressed_score_to_percent_table(new_table: dict[int, int]):
+def store_compressed_score_to_percent_table(new_table: dict[int, float]):
+    global COMPRESSED_SCORE_TO_PERCENT, KNOWN_COMPRESSED_SCORES
+    # Update the globals with the new table
     COMPRESSED_SCORE_TO_PERCENT = new_table
     KNOWN_COMPRESSED_SCORES = sorted(COMPRESSED_SCORE_TO_PERCENT.keys())
 
@@ -120,26 +123,28 @@ def store_compressed_score_to_percent_table(new_table: dict[int, int]):
 
 
 def update_compressed_score_to_percent_table():
+    LOGGER.info("RNGdle table sync: Start update of the score to percent table")
     score_to_percent_raw = fetch_score_to_percent_string()
     if not score_to_percent_raw:
         LOGGER.warning(
-            "Could not fetch the score to percent table from the website, aborting the update"
+            "RNGdle: Could not fetch the score to percent table from the website, aborting the update"
         )
         return
     score_to_percent_parsed = parse_score_to_percent_table(score_to_percent_raw)
     score_to_percent_table = evaluate_score_to_percent_table(score_to_percent_parsed)
     compressed_score_to_percent = compress_score_to_percent(score_to_percent_table)
     store_compressed_score_to_percent_table(compressed_score_to_percent)
+    LOGGER.info("RNGdle table sync: Successfully updated the score to percent table")
 
 
-def compress_score_to_percent(dico: dict[int, float]) -> dict[int, int]:
+def compress_score_to_percent(dico: dict[int, float]) -> dict[int, float]:
 
     # Compute a dict that stores for each percent which is the lowest score to reach that percent
-    percent_to_score_min: dict[int, int] = {}
+    percent_to_score_min: dict[float, int] = {}
     for score, percent in dico.items():
-        percent_int = int(percent)
-        if score < percent_to_score_min.get(percent_int, float("inf")):
-            percent_to_score_min[percent_int] = score
+        percent_rounded = int(percent * 2) / 2
+        if score < percent_to_score_min.get(percent_rounded, float("inf")):
+            percent_to_score_min[percent_rounded] = score
 
     # Invert the dict to get a score that serves as a lower bound to determine the percent
     compressed_dico = {
@@ -255,12 +260,13 @@ def format_tier(tier: Tier):
     return f"{tier.name.title()}"
 
 
-def format_percent(percent: int):
+def format_percent(percent: float):
     if percent > 50:
-        beat_percent = 99 - percent
-        percent_text = f"{beat_percent}%"
+        top_percent = 100 - percent
+        percent_text = f"{floor(top_percent)}%"
     else:
-        percent_text = f"{percent}%"
+        bottom_percent = percent
+        percent_text = f"{ceil(bottom_percent)}%"
     return percent_text
 
 
