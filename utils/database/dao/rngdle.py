@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
 from sqlalchemy.sql.expression import select
+from sqlalchemy import func
 
 from utils.database import RNGdle, RNGdleGuildConfig, RNGdleUser, get_db
 
@@ -82,6 +83,7 @@ class RNGdleDao:
         date: int,
         score: int,
         number: int,
+        badges: int,
     ) -> bool:
         """
         INSERT a roll into RNGdle history if it does not already exist.
@@ -106,6 +108,7 @@ class RNGdleDao:
                 date=date,
                 score=score,
                 number=number,
+                badge_count=badges,
             )
             session.add(rng)
             await session.commit()
@@ -153,6 +156,34 @@ class RNGdleDao:
             return rows.scalars().all()
 
         return None
+
+    @staticmethod
+    async def get_user_rolls(user_id: int, guild_id: int) -> Sequence[RNGdle] | None:
+        async for session in get_db():
+            query = select(RNGdle).filter(
+                RNGdle.user_id == user_id,
+                RNGdle.guild_id == guild_id
+            )
+            rows = await session.execute(query)
+            return rows.scalars().all()
+        return None
+
+    @staticmethod
+    async def get_server_rank_by_total(user_id: int, guild_id: int) -> int:
+        async for session in get_db():
+            query = (
+                select(RNGdle.user_id, func.sum(RNGdle.score).label("total_score"))
+                .filter(RNGdle.guild_id == guild_id)
+                .group_by(RNGdle.user_id)
+                .order_by(func.sum(RNGdle.score).desc())
+            )
+            rows = await session.execute(query)
+            leaderboard = rows.all()
+            
+            for rank, row in enumerate(leaderboard, start=1):
+                if row.user_id == user_id:
+                    return rank
+        return 0
 
 
 class RNGdleGuildConfigDao:

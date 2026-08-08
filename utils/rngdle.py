@@ -1,4 +1,4 @@
-﻿import argparse
+import argparse
 from ast import literal_eval
 import bisect
 from datetime import datetime
@@ -21,10 +21,11 @@ COMPRESSED_SCORE_TO_PERCENT_PATH = SCORE_TO_PERCENT_PATH.with_stem(
 
 
 class UserRolls:
-    def __init__(self, number, date, score):
+    def __init__(self, number, date, score, badges=0):
         self.number = number
         self.date = date
         self.score = score
+        self.badges = badges
 
 
 def to_user_rolls(rolls: list):
@@ -32,8 +33,9 @@ def to_user_rolls(rolls: list):
     for roll in rolls:
         number = roll["number"]
         score = roll["totalScore"]
+        badges = roll.get("badgeCount", 0)
         time = to_timestamp(roll["rolledAt"])
-        user_roll = UserRolls(number, time, score)
+        user_roll = UserRolls(number, time, score, badges)
         user_rolls.append(user_roll)
     return user_rolls
 
@@ -104,7 +106,7 @@ def load_score_to_percent_table():
 
 
 def load_compressed_score_to_percent_table():
-    with open(COMPRESSED_SCORE_TO_PERCENT_PATH) as file:
+    with open(COMPRESSED_SCORE_TO_PERCENT_PATH, mode="r") as file:
         data = json.load(file)
     score_to_percent_table: dict[int, float] = {
         int(score): percent for score, percent in data.items()
