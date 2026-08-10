@@ -5,7 +5,7 @@ import pathlib
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("bot.env")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
@@ -22,13 +22,10 @@ MAGIC_COLOR = 5220337
 # RNGdle sync interval in seconds (default 12 * 60 * 60s = 12 hours)
 RNGDLE_SYNC_INTERVAL = int(os.getenv("RNGDLE_SYNC_INTERVAL", str(12 * 60 * 60)))
 # RNGdle table to percent sync interval in seconds (default 7 * 24 * 60 * 60s = 7 days)
-RNGDLE_TABLE_SYNC_INTERVAL = int(
-    os.getenv("RNGDLE_TABLE_SYNC_INTERVAL", str(7 * 24 * 60 * 60))
-)
+RNGDLE_TABLE_SYNC_INTERVAL = int(os.getenv("RNGDLE_TABLE_SYNC_INTERVAL", str(7 * 24 * 60 * 60)))
 
 
 def setup_logging():
-
     current_path = pathlib.Path(__file__).parent.resolve()
     config_file = current_path / "log_config.json"
     os.makedirs("logs", exist_ok=True)

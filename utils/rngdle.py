@@ -15,9 +15,7 @@ from config import LOGGER
 
 ROOT_PATH = Path(__file__).parent.parent
 SCORE_TO_PERCENT_PATH = ROOT_PATH / "ressources" / "rngdle" / "score_to_percent.json"
-COMPRESSED_SCORE_TO_PERCENT_PATH = SCORE_TO_PERCENT_PATH.with_stem(
-    "compressed_score_to_percent"
-)
+COMPRESSED_SCORE_TO_PERCENT_PATH = SCORE_TO_PERCENT_PATH.with_stem("compressed_score_to_percent")
 
 
 class UserRolls:
@@ -48,9 +46,7 @@ def to_timestamp(date):
 
 def parse_score_to_percent_table(data: str) -> dict[str, str]:
     ENTRY_RE = re.compile(r"(\w+)\s*:\s*(\d*(?:\.\d+)?)")
-    table: dict[str, str] = {
-        score: percent for score, percent in ENTRY_RE.findall(data)
-    }
+    table: dict[str, str] = {score: percent for score, percent in ENTRY_RE.findall(data)}
     return table
 
 
@@ -74,7 +70,6 @@ def evaluate_score_to_percent_table(table: dict[str, str]) -> dict[int, float]:
 
 
 def fetch_score_to_percent_string():
-
     TABLE_FILE_URL = "https://www.rngdle.com/_next/static/chunks/13342e749f60f9c2.js"
 
     js_file = requests.get(TABLE_FILE_URL).content
@@ -86,9 +81,7 @@ def fetch_score_to_percent_string():
         return ""
 
     # Detect the score percentiles dict-like structure
-    dict_pattern = re.compile(
-        r"{(?:(?:0x[a-fA-F0-9]+|\d+|\d+e\d+)\s*:\s*(?:\d+(?:\.\d+)?|\.\d+),?)+}"
-    )
+    dict_pattern = re.compile(r"{(?:(?:0x[a-fA-F0-9]+|\d+|\d+e\d+)\s*:\s*(?:\d+(?:\.\d+)?|\.\d+),?)+}")
     result = dict_pattern.search(str(js_file))
     if result is None:
         return ""
@@ -97,7 +90,6 @@ def fetch_score_to_percent_string():
 
 
 def load_score_to_percent_table():
-
     with open(SCORE_TO_PERCENT_PATH) as file:
         data_raw = file.read()
 
@@ -108,9 +100,7 @@ def load_score_to_percent_table():
 def load_compressed_score_to_percent_table():
     with open(COMPRESSED_SCORE_TO_PERCENT_PATH, mode="r") as file:
         data = json.load(file)
-    score_to_percent_table: dict[int, float] = {
-        int(score): percent for score, percent in data.items()
-    }
+    score_to_percent_table: dict[int, float] = {int(score): percent for score, percent in data.items()}
     return score_to_percent_table
 
 
@@ -128,9 +118,7 @@ def update_compressed_score_to_percent_table():
     LOGGER.info("RNGdle table sync: Start update of the score to percent table")
     score_to_percent_raw = fetch_score_to_percent_string()
     if not score_to_percent_raw:
-        LOGGER.warning(
-            "RNGdle: Could not fetch the score to percent table from the website, aborting the update"
-        )
+        LOGGER.warning("RNGdle: Could not fetch the score to percent table from the website, aborting the update")
         return
     score_to_percent_parsed = parse_score_to_percent_table(score_to_percent_raw)
     score_to_percent_table = evaluate_score_to_percent_table(score_to_percent_parsed)
@@ -140,7 +128,6 @@ def update_compressed_score_to_percent_table():
 
 
 def compress_score_to_percent(dico: dict[int, float]) -> dict[int, float]:
-
     # Compute a dict that stores for each percent which is the lowest score to reach that percent
     percent_to_score_min: dict[float, int] = {}
     for score, percent in dico.items():
@@ -149,9 +136,7 @@ def compress_score_to_percent(dico: dict[int, float]) -> dict[int, float]:
             percent_to_score_min[percent_rounded] = score
 
     # Invert the dict to get a score that serves as a lower bound to determine the percent
-    compressed_dico = {
-        score: percent for percent, score in percent_to_score_min.items()
-    }
+    compressed_dico = {score: percent for percent, score in percent_to_score_min.items()}
     return compressed_dico
 
 
@@ -211,7 +196,6 @@ TIER_TO_COLOR = {
 
 
 def get_score_tier_from_compressed_table(score: int):
-
     if score < 0:
         LOGGER.warning(f"RNGdle: unexpected negative score ({score}).")
         return Tier.ERROR
@@ -233,9 +217,7 @@ def get_score_tier_from_compressed_table(score: int):
     elif percent < 100:
         tier = Tier.MYTHIC
     else:
-        LOGGER.warning(
-            f"RNGdle: unexpected score ({score}) and percent value ({percent})."
-        )
+        LOGGER.warning(f"RNGdle: unexpected score ({score}) and percent value ({percent}).")
         return Tier.ERROR
 
     return tier
@@ -296,7 +278,6 @@ class RNGdle:
 
 
 if __name__ == "__main__":
-
     # Perform some operations on rngdle resources to test updates mechanisms
     arg_parser = argparse.ArgumentParser()
 

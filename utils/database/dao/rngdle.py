@@ -50,9 +50,7 @@ class RNGdleDao:
                 return
 
             # No existing entry -> create one
-            rngdle_user = RNGdleUser(
-                user_id=user_id, guild_id=guild_id, rng_username=username
-            )
+            rngdle_user = RNGdleUser(user_id=user_id, guild_id=guild_id, rng_username=username)
             session.add(rngdle_user)
             await session.commit()
             return
@@ -62,9 +60,7 @@ class RNGdleDao:
         guild_id: int,
     ) -> Sequence[RNGdleUser] | None:
         async for session in get_db():
-            users = await session.execute(
-                select(RNGdleUser).filter(RNGdleUser.guild_id == guild_id)
-            )
+            users = await session.execute(select(RNGdleUser).filter(RNGdleUser.guild_id == guild_id))
             return users.scalars().all()
         return None
 
@@ -138,9 +134,7 @@ class RNGdleDao:
         return None
 
     @staticmethod
-    async def get_scores_in_range(
-        guild_id: int, start_ts: int, end_ts: int
-    ) -> Sequence[RNGdle] | None:
+    async def get_scores_in_range(guild_id: int, start_ts: int, end_ts: int) -> Sequence[RNGdle] | None:
         async for session in get_db():
             query = (
                 select(RNGdle)
@@ -160,10 +154,7 @@ class RNGdleDao:
     @staticmethod
     async def get_user_rolls(user_id: int, guild_id: int) -> Sequence[RNGdle] | None:
         async for session in get_db():
-            query = select(RNGdle).filter(
-                RNGdle.user_id == user_id,
-                RNGdle.guild_id == guild_id
-            )
+            query = select(RNGdle).filter(RNGdle.user_id == user_id, RNGdle.guild_id == guild_id)
             rows = await session.execute(query)
             return rows.scalars().all()
         return None
@@ -179,7 +170,7 @@ class RNGdleDao:
             )
             rows = await session.execute(query)
             leaderboard = rows.all()
-            
+
             for rank, row in enumerate(leaderboard, start=1):
                 if row.user_id == user_id:
                     return rank
@@ -187,22 +178,17 @@ class RNGdleDao:
 
 
 class RNGdleGuildConfigDao:
-
     @staticmethod
     async def set_leaderboard_channel(guild_id: int, channel_id: int | None) -> None:
         async for session in get_db():
-            existing = await session.execute(
-                select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id)
-            )
+            existing = await session.execute(select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id))
             config = existing.scalars().first()
 
             if config is not None:
                 config.leaderboard_channel_id = channel_id
                 session.add(config)
             else:
-                config = RNGdleGuildConfig(
-                    guild_id=guild_id, leaderboard_channel_id=channel_id
-                )
+                config = RNGdleGuildConfig(guild_id=guild_id, leaderboard_channel_id=channel_id)
                 session.add(config)
 
             await session.commit()
@@ -210,9 +196,7 @@ class RNGdleGuildConfigDao:
     @staticmethod
     async def get_leaderboard_channel(guild_id: int) -> int | None:
         async for session in get_db():
-            existing = await session.execute(
-                select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id)
-            )
+            existing = await session.execute(select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id))
             config = existing.scalars().first()
             if config is not None:
                 return config.leaderboard_channel_id
