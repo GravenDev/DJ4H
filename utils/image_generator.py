@@ -47,12 +47,8 @@ class RNGdleLeaderboardUser(LeaderboardUser):
 
     column_headers = ["Tirage", "Score", "Placement"]
     column_x_offsets = [500, 650, 810]
-    # Can add an extrac width to be used as a margin spacer on the right of the image
+    # Can add an extra width to be used as a margin spacer on the right of the image
     column_max_widths = [140, 130, 180, 20]
-    # column_headers = ["Tirage", "Rareté", "Score", "Placement"]
-    # column_x_offsets = [500, 640, 840, 990]
-    # # Can add an extrac width to be used as a margin spacer on the right of the image
-    # column_max_widths = [140, 180, 130, 180, 20]
 
     def get_column_values(self) -> list[str]:
         return [self.tirage, self.score, self.percent_text]
