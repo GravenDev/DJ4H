@@ -218,7 +218,7 @@ def get_score_tier_from_compressed_table(score: int):
 
     percent = get_score_percent(score)
 
-    if 0 <= percent < 1.5:
+    if 0 <= percent < 1:
         tier = Tier.TRASH
     elif percent < 50:
         tier = Tier.COMMON
