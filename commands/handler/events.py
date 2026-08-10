@@ -37,7 +37,9 @@ class EventHandler(commands.Cog):
             return
         if last_message.author_id == ctx.author.id:
             # Last message was sent by the same user
-            LOGGER.debug(f"Last message {last_message.message_id} was sent by the same user in {ctx.guild.name}")
+            LOGGER.debug(
+                f"Last message {last_message.message_id} was sent by the same user in {ctx.guild.name}"
+            )
             return
 
         # User has won a point
@@ -56,7 +58,9 @@ class EventHandler(commands.Cog):
                     guild.guild_id,
                     new_score,
                 )
-                LOGGER.info(f"Updated user {last_message.author_id} in {ctx.guild.name} to score {new_score}")
+                LOGGER.info(
+                    f"Updated user {last_message.author_id} in {ctx.guild.name} to score {new_score}"
+                )
             member = await ctx.guild.fetch_member(last_message.author_id)
             embed = discord.Embed(
                 title="Point Awarded!",

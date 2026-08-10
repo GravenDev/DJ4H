@@ -81,7 +81,9 @@ def fetch_score_to_percent_string():
         return ""
 
     # Detect the score percentiles dict-like structure
-    dict_pattern = re.compile(r"{(?:(?:0x[a-fA-F0-9]+|\d+|\d+e\d+)\s*:\s*(?:\d+(?:\.\d+)?|\.\d+),?)+}")
+    dict_pattern = re.compile(
+        r"{(?:(?:0x[a-fA-F0-9]+|\d+|\d+e\d+)\s*:\s*(?:\d+(?:\.\d+)?|\.\d+),?)+}"
+    )
     result = dict_pattern.search(str(js_file))
     if result is None:
         return ""
@@ -100,7 +102,9 @@ def load_score_to_percent_table():
 def load_compressed_score_to_percent_table():
     with open(COMPRESSED_SCORE_TO_PERCENT_PATH, mode="r") as file:
         data = json.load(file)
-    score_to_percent_table: dict[int, float] = {int(score): percent for score, percent in data.items()}
+    score_to_percent_table: dict[int, float] = {
+        int(score): percent for score, percent in data.items()
+    }
     return score_to_percent_table
 
 
@@ -118,7 +122,9 @@ def update_compressed_score_to_percent_table():
     LOGGER.info("RNGdle table sync: Start update of the score to percent table")
     score_to_percent_raw = fetch_score_to_percent_string()
     if not score_to_percent_raw:
-        LOGGER.warning("RNGdle: Could not fetch the score to percent table from the website, aborting the update")
+        LOGGER.warning(
+            "RNGdle: Could not fetch the score to percent table from the website, aborting the update"
+        )
         return
     score_to_percent_parsed = parse_score_to_percent_table(score_to_percent_raw)
     score_to_percent_table = evaluate_score_to_percent_table(score_to_percent_parsed)

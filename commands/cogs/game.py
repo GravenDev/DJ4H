@@ -116,7 +116,9 @@ class Game(commands.Cog):
 
         await GuildsDao.update_guild(ctx.guild.id, channel.id, converted_time)
         await ctx.respond(f"Configuration updated: Channel: {channel.mention}, Delay: {delay}.")
-        LOGGER.info(f"Guild {ctx.guild.id} updated with channel {channel.id} and delay {converted_time} seconds.")
+        LOGGER.info(
+            f"Guild {ctx.guild.id} updated with channel {channel.id} and delay {converted_time} seconds."
+        )
 
     @jd4h_admin.command(description="Set a user's score")
     @discord.default_permissions(administrator=True)

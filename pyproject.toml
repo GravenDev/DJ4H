@@ -24,10 +24,10 @@ package-mode = false
 black = "26.5.1"
 
 [tool.autopep8]
-max_line_length=120
+max_line_length=100
 
 [tool.ruff]
-line-length=120
+line-length=100
 
 [tool.black]
-line-length=120
+line-length=100

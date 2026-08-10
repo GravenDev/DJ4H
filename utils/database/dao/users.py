@@ -8,7 +8,9 @@ class UserDao:
     async def get_user(user_id: int, guild_id: int) -> User | None:
         """Asynchronously add a new user to the database."""
         async for session in get_db():
-            user = await session.execute(select(User).filter(User.user_id == user_id, User.guild_id == guild_id))
+            user = await session.execute(
+                select(User).filter(User.user_id == user_id, User.guild_id == guild_id)
+            )
             return user.scalars().first()
         return None
 
@@ -16,7 +18,9 @@ class UserDao:
     async def update_user(user_id: int, guild_id: int, score: int) -> None:
         """Asynchronously update a user's information."""
         async for session in get_db():
-            user_query = await session.execute(select(User).filter(User.user_id == user_id, User.guild_id == guild_id))
+            user_query = await session.execute(
+                select(User).filter(User.user_id == user_id, User.guild_id == guild_id)
+            )
             user = user_query.scalars().first()
             if user:
                 user.score = score
@@ -35,7 +39,10 @@ class UserDao:
         """Asynchronously get the leaderboard for a specific guild."""
         async for session in get_db():
             query = await session.execute(
-                select(User).filter(User.guild_id == guild_id).order_by(User.score.desc()).limit(limit)
+                select(User)
+                .filter(User.guild_id == guild_id)
+                .order_by(User.score.desc())
+                .limit(limit)
             )
             return query.scalars().all()
         return None
@@ -56,7 +63,9 @@ class UserDao:
     @staticmethod
     async def delete_user(user_id: int, guild_id: int):
         async for session in get_db():
-            user_query = await session.execute(select(User).filter(User.user_id == user_id, User.guild_id == guild_id))
+            user_query = await session.execute(
+                select(User).filter(User.user_id == user_id, User.guild_id == guild_id)
+            )
             user = user_query.scalars().first()
             if user is None:
                 return

@@ -57,7 +57,9 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
                         )
             except Exception:
                 failed += 1
-                LOGGER.error(f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}")
+                LOGGER.error(
+                    f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}"
+                )
     except Exception:
         failed += 1
         LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")

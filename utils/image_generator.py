@@ -108,13 +108,27 @@ class LeaderboardGenerator:
         self._load_static_resources()
 
     def _load_static_resources(self):
-        self.PODIUM_BRONZE = Image.open(self.base_path / "images" / "medal_bronze.png").convert("RGBA").resize((50, 50))
-        self.PODIUM_SILVER = Image.open(self.base_path / "images" / "medal_silver.png").convert("RGBA").resize((50, 50))
-        self.PODIUM_GOLD = Image.open(self.base_path / "images" / "medal_gold.png").convert("RGBA").resize((50, 50))
+        self.PODIUM_BRONZE = (
+            Image.open(self.base_path / "images" / "medal_bronze.png")
+            .convert("RGBA")
+            .resize((50, 50))
+        )
+        self.PODIUM_SILVER = (
+            Image.open(self.base_path / "images" / "medal_silver.png")
+            .convert("RGBA")
+            .resize((50, 50))
+        )
+        self.PODIUM_GOLD = (
+            Image.open(self.base_path / "images" / "medal_gold.png")
+            .convert("RGBA")
+            .resize((50, 50))
+        )
 
         self._ARROW_UP = Image.open(self.base_path / "rngdle" / "arrow_up.png").resize((40, 40))
 
-        self._TRASH = Image.open(self.base_path / "rngdle" / "trash.png").convert("RGBA").resize((40, 40))
+        self._TRASH = (
+            Image.open(self.base_path / "rngdle" / "trash.png").convert("RGBA").resize((40, 40))
+        )
 
         self.ARROW_UP_EVEN = self._color_transparent_background(self._ARROW_UP, self.ROW_EVEN_COLOR)
         self.ARROW_UP_ODD = self._color_transparent_background(self._ARROW_UP, self.ROW_ODD_COLOR)
@@ -332,7 +346,11 @@ class LeaderboardGenerator:
             avatar_size = 60
             try:
                 avatar_data = await user.user.avatar.read()
-                avatar_img = Image.open(BytesIO(avatar_data)).resize((avatar_size, avatar_size)).convert("RGBA")
+                avatar_img = (
+                    Image.open(BytesIO(avatar_data))
+                    .resize((avatar_size, avatar_size))
+                    .convert("RGBA")
+                )
                 self.create_avatar_mask(avatar_img, avatar_size, avatar_x, avatar_y, img)
             except Exception:
                 default_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
@@ -446,9 +464,15 @@ class ProfileGenerator:
     def _load_images(self):
         try:
             img_dir = self.base_path / "images"
-            self.PODIUM_BRONZE = Image.open(str(img_dir / "medal_bronze.png")).convert("RGBA").resize((93, 90))
-            self.PODIUM_SILVER = Image.open(str(img_dir / "medal_silver.png")).convert("RGBA").resize((93, 90))
-            self.PODIUM_GOLD = Image.open(str(img_dir / "medal_gold.png")).convert("RGBA").resize((90, 90))
+            self.PODIUM_BRONZE = (
+                Image.open(str(img_dir / "medal_bronze.png")).convert("RGBA").resize((93, 90))
+            )
+            self.PODIUM_SILVER = (
+                Image.open(str(img_dir / "medal_silver.png")).convert("RGBA").resize((93, 90))
+            )
+            self.PODIUM_GOLD = (
+                Image.open(str(img_dir / "medal_gold.png")).convert("RGBA").resize((90, 90))
+            )
         except Exception:
             self.PODIUM_BRONZE = None
             self.PODIUM_SILVER = None
@@ -464,7 +488,11 @@ class ProfileGenerator:
         try:
             if user:
                 avatar_data = await user.avatar.read()
-                avatar_img = Image.open(BytesIO(avatar_data)).resize((avatar_size, avatar_size)).convert("RGBA")
+                avatar_img = (
+                    Image.open(BytesIO(avatar_data))
+                    .resize((avatar_size, avatar_size))
+                    .convert("RGBA")
+                )
             else:
                 raise Exception()
             self.create_avatar_mask(avatar_img, avatar_size, avatar_x, avatar_y, img)
@@ -507,7 +535,12 @@ class ProfileGenerator:
         lucky_seed_str = f"{stats['lucky_seed']:,}".replace(",", " ")
         score_str = f"({stats['highest_score']:,} EP)".replace(",", " ")
 
-        draw.text((65, best_roll_y + 15), "BEST ROLL", fill=rarity_color, font=self.font_small)
+        draw.text(
+            (65, best_roll_y + 15),
+            "BEST ROLL",
+            fill=rarity_color,
+            font=self.font_small,
+        )
         draw.text(
             (65, best_roll_y + 50),
             lucky_seed_str,
@@ -558,7 +591,12 @@ class ProfileGenerator:
             else:
                 draw.rounded_rectangle([x, y, x + 350, y + 110], radius=12, fill=self.BOX_COLOR)
 
-            draw.text((x + 20, y + 15), title, fill=self.TITLE_COLOR, font=self.font_small)
+            draw.text(
+                (x + 20, y + 15),
+                title,
+                fill=self.TITLE_COLOR,
+                font=self.font_small,
+            )
             y_offset = 48 if value_font == self.font_small else 45
             draw.text((x + 20, y + y_offset), value, fill=value_color, font=value_font)
             if subtext:

@@ -9,7 +9,9 @@ class MessagesDao:
         """Asynchronously get the last message for a specific guild."""
         async for session in get_db():
             message = await session.execute(
-                select(Message).filter(Message.guild_id == guild_id).order_by(Message.timestamp.desc())
+                select(Message)
+                .filter(Message.guild_id == guild_id)
+                .order_by(Message.timestamp.desc())
             )
             return message.scalars().first()
         return None
@@ -31,7 +33,9 @@ class MessagesDao:
     async def delete_message(message_id: int):
         """Asynchronously delete a message by its ID."""
         async for session in get_db():
-            message_query = await session.execute(select(Message).filter(Message.message_id == message_id))
+            message_query = await session.execute(
+                select(Message).filter(Message.message_id == message_id)
+            )
             message = message_query.scalars().first()
             if message:
                 await session.delete(message)

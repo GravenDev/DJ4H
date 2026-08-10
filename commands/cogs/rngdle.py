@@ -159,7 +159,9 @@ class RNGdle(commands.Cog):
     async def profil(
         self,
         ctx: discord.ApplicationContext,
-        target: discord.Option(str, "RNGdle username or @mention a Discord user", required=False) = None,
+        target: discord.Option(
+            str, "RNGdle username or @mention a Discord user", required=False
+        ) = None,
     ) -> None:
         """Show RNGDLE profile stats."""
         await ctx.defer()
@@ -187,7 +189,9 @@ class RNGdle(commands.Cog):
             db_user = next((u for u in registered_users if u.user_id == target_id), None)
             if db_user:
                 rngdle_username = db_user.rng_username
-                member = ctx.guild.get_member(target_id) or await get_or_fetch_user(self.bot, target_id)
+                member = ctx.guild.get_member(target_id) or await get_or_fetch_user(
+                    self.bot, target_id
+                )
         else:
             rngdle_username = target
             db_user = next(
@@ -196,7 +200,9 @@ class RNGdle(commands.Cog):
             )
             if db_user:
                 target_id = db_user.user_id
-                member = ctx.guild.get_member(target_id) or await get_or_fetch_user(self.bot, target_id)
+                member = ctx.guild.get_member(target_id) or await get_or_fetch_user(
+                    self.bot, target_id
+                )
 
         if not rngdle_username or not target_id:
             await ctx.respond(

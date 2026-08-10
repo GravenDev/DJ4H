@@ -60,7 +60,9 @@ class RNGdleDao:
         guild_id: int,
     ) -> Sequence[RNGdleUser] | None:
         async for session in get_db():
-            users = await session.execute(select(RNGdleUser).filter(RNGdleUser.guild_id == guild_id))
+            users = await session.execute(
+                select(RNGdleUser).filter(RNGdleUser.guild_id == guild_id)
+            )
             return users.scalars().all()
         return None
 
@@ -134,7 +136,9 @@ class RNGdleDao:
         return None
 
     @staticmethod
-    async def get_scores_in_range(guild_id: int, start_ts: int, end_ts: int) -> Sequence[RNGdle] | None:
+    async def get_scores_in_range(
+        guild_id: int, start_ts: int, end_ts: int
+    ) -> Sequence[RNGdle] | None:
         async for session in get_db():
             query = (
                 select(RNGdle)
@@ -181,7 +185,9 @@ class RNGdleGuildConfigDao:
     @staticmethod
     async def set_leaderboard_channel(guild_id: int, channel_id: int | None) -> None:
         async for session in get_db():
-            existing = await session.execute(select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id))
+            existing = await session.execute(
+                select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id)
+            )
             config = existing.scalars().first()
 
             if config is not None:
@@ -196,7 +202,9 @@ class RNGdleGuildConfigDao:
     @staticmethod
     async def get_leaderboard_channel(guild_id: int) -> int | None:
         async for session in get_db():
-            existing = await session.execute(select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id))
+            existing = await session.execute(
+                select(RNGdleGuildConfig).filter(RNGdleGuildConfig.guild_id == guild_id)
+            )
             config = existing.scalars().first()
             if config is not None:
                 return config.leaderboard_channel_id
