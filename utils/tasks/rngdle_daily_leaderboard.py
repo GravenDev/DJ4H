@@ -48,12 +48,9 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         generator = LeaderboardGenerator()
         leaderboard_users: list[RNGdleLeaderboardUser] = []
         for user, score_col, rank in zip(users, scores, range(len(users))):
-
             score = int(score_col.score)
             number = int(score_col.number)
-            u = RNGdleLeaderboardUser.create_user_instance(
-                user, score, number, rank + 1
-            )
+            u = RNGdleLeaderboardUser.create_user_instance(user, score, number, rank + 1)
             leaderboard_users.append(u)
 
         generated = await generator.generate_leaderboard(leaderboard_users)
@@ -63,9 +60,7 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         file = discord.File(fp=buffer, filename="leaderboard.png")
 
         top_score = scores[0].score
-        top_users = [
-            users[i] for i, score in enumerate(scores) if score.score == top_score
-        ]
+        top_users = [users[i] for i, score in enumerate(scores) if score.score == top_score]
         mentions = " ".join(u.mention for u in top_users if u.id != 610843701861679108)
 
         await channel.send(
@@ -73,9 +68,7 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
             file=file,
         )
 
-        LOGGER.info(
-            f"Daily leaderboard sent to guild {config.guild_id} ({channel.name})"
-        )
+        LOGGER.info(f"Daily leaderboard sent to guild {config.guild_id} ({channel.name})")
 
 
 @rngdle_daily_leaderboard_task.error

@@ -6,7 +6,7 @@ authors = [
     { name = "Gamingdy" }
 ]
 readme = "README.md"
-requires-python = "~3.13"
+requires-python = "~=3.13.0"
 dependencies = [
     "py-cord (==2.8.1)",
     "python-dotenv (==1.2.2)",
@@ -22,3 +22,12 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 black = "26.5.1"
+
+[tool.autopep8]
+max_line_length=100
+
+[tool.ruff]
+line-length=100
+
+[tool.black]
+line-length=100

@@ -4,7 +4,6 @@ from utils.database import Message, get_db
 
 
 class MessagesDao:
-
     @staticmethod
     async def get_last_messages_by_guild(guild_id: int) -> Message | None:
         """Asynchronously get the last message for a specific guild."""
@@ -18,9 +17,7 @@ class MessagesDao:
         return None
 
     @staticmethod
-    async def add_message(
-        message_id: int, guild_id: int, timestamp: int, author_id: int
-    ) -> None:
+    async def add_message(message_id: int, guild_id: int, timestamp: int, author_id: int) -> None:
         """Asynchronously add a new message to the database."""
         async for session in get_db():
             message = Message(

@@ -26,9 +26,7 @@ class RNGdle(commands.Cog):
 
     rng_group = SlashCommandGroup(name="rngdle", description="RNGDLE commands")
 
-    rngdle_admin = SlashCommandGroup(
-        name="rngdle-admin", description="RNGDLE admin commands"
-    )
+    rngdle_admin = SlashCommandGroup(name="rngdle-admin", description="RNGDLE admin commands")
 
     @rngdle_admin.command(description="Register/Update an RNGDLE user")
     @discord.default_permissions(administrator=True)
@@ -62,9 +60,7 @@ class RNGdle(commands.Cog):
             await ctx.respond("No registered RNGDLE users found.")
             return
 
-        all_users = "\n".join(
-            f"<@{user.user_id}> -> {user.rng_username}" for user in users
-        )
+        all_users = "\n".join(f"<@{user.user_id}> -> {user.rng_username}" for user in users)
         message = discord.Embed(
             title="RNGDLE users",
             color=discord.Colour(MAGIC_COLOR),
@@ -93,9 +89,7 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
-    @rngdle_admin.command(
-        description="Manually refresh RNGdle scores for all registered users"
-    )
+    @rngdle_admin.command(description="Manually refresh RNGdle scores for all registered users")
     @discord.default_permissions(administrator=True)
     async def refresh(self, ctx: discord.ApplicationContext) -> None:
         """Manually refresh RNGdle scores without waiting for the hourly task."""
@@ -150,9 +144,7 @@ class RNGdle(commands.Cog):
 
             score = int(score_col.score)
             number = int(score_col.number)
-            u = RNGdleLeaderboardUser.create_user_instance(
-                user, score, number, len(users) + 1
-            )
+            u = RNGdleLeaderboardUser.create_user_instance(user, score, number, len(users) + 1)
             users.append(u)
 
         generated = await self.leaderboard_generator.generate_leaderboard(users)
@@ -183,24 +175,18 @@ class RNGdle(commands.Cog):
 
         registered_users = await RNGdleDao.get_registered_users(ctx.guild.id)
         if not registered_users:
-            await ctx.respond(
-                "Personne n'est enregistré sur ce serveur.", ephemeral=True
-            )
+            await ctx.respond("Personne n'est enregistré sur ce serveur.", ephemeral=True)
             return
 
         if not target:
-            db_user = next(
-                (u for u in registered_users if u.user_id == ctx.author.id), None
-            )
+            db_user = next((u for u in registered_users if u.user_id == ctx.author.id), None)
             if db_user:
                 rngdle_username = db_user.rng_username
                 target_id = ctx.author.id
                 member = ctx.author
         elif target.startswith("<@") and target.endswith(">"):
             target_id = int(target.strip("<@!>"))
-            db_user = next(
-                (u for u in registered_users if u.user_id == target_id), None
-            )
+            db_user = next((u for u in registered_users if u.user_id == target_id), None)
             if db_user:
                 rngdle_username = db_user.rng_username
                 member = ctx.guild.get_member(target_id) or await get_or_fetch_user(
@@ -209,11 +195,7 @@ class RNGdle(commands.Cog):
         else:
             rngdle_username = target
             db_user = next(
-                (
-                    u
-                    for u in registered_users
-                    if u.rng_username.lower() == target.lower()
-                ),
+                (u for u in registered_users if u.rng_username.lower() == target.lower()),
                 None,
             )
             if db_user:
@@ -235,9 +217,7 @@ class RNGdle(commands.Cog):
             await rngdle_fetch_with_cooldown()
             rolls = await RNGdleDao.get_user_rolls(target_id, ctx.guild.id)
             if not rolls:
-                await ctx.respond(
-                    f"Aucun tirage trouvé pour `{rngdle_username}`!", ephemeral=True
-                )
+                await ctx.respond(f"Aucun tirage trouvé pour `{rngdle_username}`!", ephemeral=True)
                 return
 
         total_rolls = len(rolls)
@@ -273,17 +253,13 @@ class RNGdle(commands.Cog):
             "total_score_sum": total_score_sum,
             "avg_score": avg_score,
             "highest_score": highest_score,
-            "highest_date": (
-                highest_date.strftime("%d %b %Y") if highest_date else "N/A"
-            ),
+            "highest_date": (highest_date.strftime("%d %b %Y") if highest_date else "N/A"),
             "lucky_seed": lucky_number,
             "max_badges": max_badges,
             "server_rank": rank,
         }
 
-        img = await self.profile_generator.generate_profile(
-            member, rngdle_username, stats_dict
-        )
+        img = await self.profile_generator.generate_profile(member, rngdle_username, stats_dict)
 
         buffer = BytesIO()
         img.save(buffer, format="PNG")

@@ -54,9 +54,7 @@ class RNGdleLeaderboardUser(LeaderboardUser):
         return [self.tirage, self.score, self.percent_text]
 
     @classmethod
-    def create_user_instance(
-        cls, user: discord.User, score: int, number: int, rank: int
-    ):
+    def create_user_instance(cls, user: discord.User, score: int, number: int, rank: int):
         new_user = cls()
         new_user.user = user
         new_user.score = format_number(score)
@@ -101,9 +99,7 @@ class LeaderboardGenerator:
 
     def __init__(self):
         self.font_path: pathlib.Path | None = None
-        self.base_path: pathlib.Path = (
-            pathlib.Path(__file__).parent.resolve() / ".." / "ressources"
-        )
+        self.base_path: pathlib.Path = pathlib.Path(__file__).parent.resolve() / ".." / "ressources"
 
         self._load_static_resources()
 
@@ -124,28 +120,16 @@ class LeaderboardGenerator:
             .resize((50, 50))
         )
 
-        self._ARROW_UP = Image.open(self.base_path / "rngdle" / "arrow_up.png").resize(
-            (40, 40)
-        )
+        self._ARROW_UP = Image.open(self.base_path / "rngdle" / "arrow_up.png").resize((40, 40))
 
         self._TRASH = (
-            Image.open(self.base_path / "rngdle" / "trash.png")
-            .convert("RGBA")
-            .resize((40, 40))
+            Image.open(self.base_path / "rngdle" / "trash.png").convert("RGBA").resize((40, 40))
         )
 
-        self.ARROW_UP_EVEN = self._color_transparent_background(
-            self._ARROW_UP, self.ROW_EVEN_COLOR
-        )
-        self.ARROW_UP_ODD = self._color_transparent_background(
-            self._ARROW_UP, self.ROW_ODD_COLOR
-        )
-        self.TRASH_EVEN = self._color_transparent_background(
-            self._TRASH, self.ROW_EVEN_COLOR
-        )
-        self.TRASH_ODD = self._color_transparent_background(
-            self._TRASH, self.ROW_ODD_COLOR
-        )
+        self.ARROW_UP_EVEN = self._color_transparent_background(self._ARROW_UP, self.ROW_EVEN_COLOR)
+        self.ARROW_UP_ODD = self._color_transparent_background(self._ARROW_UP, self.ROW_ODD_COLOR)
+        self.TRASH_EVEN = self._color_transparent_background(self._TRASH, self.ROW_EVEN_COLOR)
+        self.TRASH_ODD = self._color_transparent_background(self._TRASH, self.ROW_ODD_COLOR)
 
         try:
             self.font_path = self.base_path / "font" / "outfit.ttf"
@@ -156,9 +140,7 @@ class LeaderboardGenerator:
             self.font_mono_path = self.base_path / "font" / "spacemono_bold.ttf"
             self.font_mono_regular = ImageFont.truetype(self.font_mono_path, 30)
         except IOError:
-            LOGGER.warning(
-                "Warning: Could not load specified font. Using Pillow's default font."
-            )
+            LOGGER.warning("Warning: Could not load specified font. Using Pillow's default font.")
             self.font_path = None
             self.font_header = ImageFont.load_default()
             self.font_regular = ImageFont.load_default()
@@ -166,9 +148,7 @@ class LeaderboardGenerator:
 
             self.font_mono_regular = ImageFont.load_default()
 
-    def _color_transparent_background(
-        self, base_image: Image.Image, new_background: ColorType
-    ):
+    def _color_transparent_background(self, base_image: Image.Image, new_background: ColorType):
         channels = [img.getdata() for img in base_image.split()]
 
         new_data: list[ColorType] = []
@@ -263,11 +243,7 @@ class LeaderboardGenerator:
         if model.column_x_offsets:
             last_start_pos = model.column_x_offsets[-1]
             has_spacer = len(model.column_x_offsets) != len(model.column_max_widths)
-            last_width = (
-                model.column_max_widths[-2]
-                if has_spacer
-                else model.column_max_widths[-1]
-            )
+            last_width = model.column_max_widths[-2] if has_spacer else model.column_max_widths[-1]
             spacer_width = model.column_max_widths[-1] if has_spacer else 0
             total_width = last_start_pos + last_width + spacer_width
 
@@ -303,9 +279,7 @@ class LeaderboardGenerator:
 
         for user in users:
             y_pos = self.HEADER_HEIGHT + ((user.rank - 1) * self.ROW_HEIGHT)
-            row_color = (
-                self.ROW_EVEN_COLOR if (user.rank - 1) % 2 == 0 else self.ROW_ODD_COLOR
-            )
+            row_color = self.ROW_EVEN_COLOR if (user.rank - 1) % 2 == 0 else self.ROW_ODD_COLOR
             draw.rectangle(
                 [0, y_pos, min_possible_width, y_pos + self.ROW_HEIGHT],
                 fill=row_color,
@@ -373,16 +347,10 @@ class LeaderboardGenerator:
                     .resize((avatar_size, avatar_size))
                     .convert("RGBA")
                 )
-                self.create_avatar_mask(
-                    avatar_img, avatar_size, avatar_x, avatar_y, img
-                )
+                self.create_avatar_mask(avatar_img, avatar_size, avatar_x, avatar_y, img)
             except Exception:
-                default_avatar = Image.new(
-                    "RGBA", (avatar_size, avatar_size), (120, 120, 120, 255)
-                )
-                self.create_avatar_mask(
-                    default_avatar, avatar_size, avatar_x, avatar_y, img
-                )
+                default_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
+                self.create_avatar_mask(default_avatar, avatar_size, avatar_x, avatar_y, img)
 
             username_x = 190
             username_y = y_pos + (self.ROW_HEIGHT / 2) - 15
@@ -421,19 +389,11 @@ class LeaderboardGenerator:
                         text_color = user.tier_color
 
                         if user.percent > 50:
-                            arrow_img = (
-                                self.ARROW_UP_EVEN
-                                if user.rank % 2
-                                else self.ARROW_UP_ODD
-                            )
+                            arrow_img = self.ARROW_UP_EVEN if user.rank % 2 else self.ARROW_UP_ODD
                         else:
-                            arrow_img = (
-                                self.TRASH_EVEN if user.rank % 2 else self.TRASH_ODD
-                            )
+                            arrow_img = self.TRASH_EVEN if user.rank % 2 else self.TRASH_ODD
 
-                        text_length = self._get_fittex_text_length(
-                            draw, col_text, max_width, font
-                        )
+                        text_length = self._get_fittex_text_length(draw, col_text, max_width, font)
                         text_x_right = col_x + max_width
                         text_x_left = text_x_right - text_length
                         arrow_x_right = text_x_left - 10
@@ -476,9 +436,7 @@ class ProfileGenerator:
     SUBTEXT_COLOR: ColorType = (170, 170, 170)
 
     def __init__(self):
-        self.base_path: pathlib.Path = (
-            pathlib.Path(__file__).parent.resolve() / ".." / "ressources"
-        )
+        self.base_path: pathlib.Path = pathlib.Path(__file__).parent.resolve() / ".." / "ressources"
         self._load_fonts()
         self._load_images()
 
@@ -503,19 +461,13 @@ class ProfileGenerator:
         try:
             img_dir = self.base_path / "images"
             self.PODIUM_BRONZE = (
-                Image.open(str(img_dir / "medal_bronze.png"))
-                .convert("RGBA")
-                .resize((93, 90))
+                Image.open(str(img_dir / "medal_bronze.png")).convert("RGBA").resize((93, 90))
             )
             self.PODIUM_SILVER = (
-                Image.open(str(img_dir / "medal_silver.png"))
-                .convert("RGBA")
-                .resize((93, 90))
+                Image.open(str(img_dir / "medal_silver.png")).convert("RGBA").resize((93, 90))
             )
             self.PODIUM_GOLD = (
-                Image.open(str(img_dir / "medal_gold.png"))
-                .convert("RGBA")
-                .resize((90, 90))
+                Image.open(str(img_dir / "medal_gold.png")).convert("RGBA").resize((90, 90))
             )
         except Exception:
             self.PODIUM_BRONZE = None
@@ -526,9 +478,7 @@ class ProfileGenerator:
         img = Image.new("RGB", (self.WIDTH, self.HEIGHT), self.BG_COLOR)
         draw = ImageDraw.Draw(img)
 
-        draw.rectangle(
-            [0, 0, self.WIDTH, self.HEADER_HEIGHT], fill=self.HEADER_BG_COLOR
-        )
+        draw.rectangle([0, 0, self.WIDTH, self.HEADER_HEIGHT], fill=self.HEADER_BG_COLOR)
 
         avatar_x, avatar_y, avatar_size = 40, 25, 100
         try:
@@ -543,12 +493,8 @@ class ProfileGenerator:
                 raise Exception()
             self.create_avatar_mask(avatar_img, avatar_size, avatar_x, avatar_y, img)
         except Exception:
-            default_avatar = Image.new(
-                "RGBA", (avatar_size, avatar_size), (120, 120, 120, 255)
-            )
-            self.create_avatar_mask(
-                default_avatar, avatar_size, avatar_x, avatar_y, img
-            )
+            default_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
+            self.create_avatar_mask(default_avatar, avatar_size, avatar_x, avatar_y, img)
 
         draw.text((170, 35), username, fill=self.TEXT_COLOR, font=self.font_title)
 
@@ -586,7 +532,10 @@ class ProfileGenerator:
         score_str = f"({stats['highest_score']:,} EP)".replace(",", " ")
 
         draw.text(
-            (65, best_roll_y + 15), "BEST ROLL", fill=rarity_color, font=self.font_small
+            (65, best_roll_y + 15),
+            "BEST ROLL",
+            fill=rarity_color,
+            font=self.font_small,
         )
         draw.text(
             (65, best_roll_y + 50),
@@ -636,12 +585,13 @@ class ProfileGenerator:
                     width=2,
                 )
             else:
-                draw.rounded_rectangle(
-                    [x, y, x + 350, y + 110], radius=12, fill=self.BOX_COLOR
-                )
+                draw.rounded_rectangle([x, y, x + 350, y + 110], radius=12, fill=self.BOX_COLOR)
 
             draw.text(
-                (x + 20, y + 15), title, fill=self.TITLE_COLOR, font=self.font_small
+                (x + 20, y + 15),
+                title,
+                fill=self.TITLE_COLOR,
+                font=self.font_small,
             )
             y_offset = 48 if value_font == self.font_small else 45
             draw.text((x + 20, y + y_offset), value, fill=value_color, font=value_font)

@@ -14,9 +14,7 @@ from utils.rngdle import (
 _last_rngdle_sync = datetime.datetime.fromtimestamp(0)
 
 
-async def _process_user(
-    rng_client: RNGdleClient, db_user, log_mode: str = "background"
-) -> dict:
+async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "background") -> dict:
     """
     Fetch rolls for one user and store them into DB history.
 
@@ -49,7 +47,7 @@ async def _process_user(
                     date=roll.date,
                     score=roll.score,
                     number=roll.number,
-                    badges=roll.badges
+                    badges=roll.badges,
                 )
                 if inserted:
                     processed += 1
@@ -64,9 +62,7 @@ async def _process_user(
                 )
     except Exception:
         failed += 1
-        LOGGER.error(
-            f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}"
-        )
+        LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")
 
     return {"processed": processed, "failed": failed}
 

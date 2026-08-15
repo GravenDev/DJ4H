@@ -5,6 +5,7 @@ Revises:
 Create Date: 2026-06-13 00:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -49,4 +50,3 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("messages")
     op.drop_table("guilds")
-
