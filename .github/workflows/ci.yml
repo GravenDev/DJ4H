@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
       - name: Check formatting (Black)
-        run: poetry run black --target-version py313 --extend-exclude alembic --check .
+        run: poetry run black --target-version py313 --extend-exclude alembic --diff --check .
 
   docker-build-check:
     name: Build Docker image (no push)
