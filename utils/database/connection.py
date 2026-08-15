@@ -3,7 +3,6 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from config import DATABASE_PATH
 
-
 Base = declarative_base()
 
 SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_PATH}"
