@@ -174,11 +174,30 @@ class RNGdleDao:
             )
             rows = await session.execute(query)
             leaderboard = rows.all()
-
             for rank, row in enumerate(leaderboard, start=1):
                 if row.user_id == user_id:
                     return rank
         return 0
+
+    @staticmethod
+    async def get_guild_rolls(guild_id: int) -> Sequence[RNGdle] | None:
+        async for session in get_db():
+            query = select(RNGdle).filter(RNGdle.guild_id == guild_id)
+            rows = await session.execute(query)
+            return rows.scalars().all()
+        return None
+
+    @staticmethod
+    async def get_overall_leaderboard(guild_id: int):
+        async for session in get_db():
+            query = (
+                select(RNGdle.user_id, func.sum(RNGdle.score).label("total_score"))
+                .filter(RNGdle.guild_id == guild_id)
+                .group_by(RNGdle.user_id)
+                .order_by(func.sum(RNGdle.score).desc())
+            )
+            rows = await session.execute(query)
+            return rows.all()
 
 
 class RNGdleGuildConfigDao:

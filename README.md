@@ -123,6 +123,15 @@ poetry run python main.py
 docker-compose -f compose-prod.yml up -d
 ```
 
+Make a deployment
+```bash
+# clone repository
+git checkout master
+git pull
+git tag vx.x.x
+git push origin vx.x.x
+```
+
 ### Development Mode with Docker
 
 ```bash
