@@ -37,8 +37,10 @@ async def _process_user(
 
     _last_rngdle_sync = datetime.datetime.now()
 
-    user_rolls = await RNGdleDao.get_user_rolls(int(db_user.user_id), int(db_user.guild_id))
-    most_recent_timestamp = max((int(roll.date) for roll in user_rolls), default=0)
+    most_recent_roll = await RNGdleDao.get_user_most_recent_roll(
+        int(db_user.user_id), int(db_user.guild_id)
+    )
+    most_recent_timestamp = int(most_recent_roll.date) if most_recent_roll else 0
 
     utc = datetime.UTC
     last_reset = datetime.datetime.now(utc).date()
