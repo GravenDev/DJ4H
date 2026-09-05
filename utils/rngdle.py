@@ -266,9 +266,7 @@ class RNGdle:
     fetch_size: int = 100
 
     def __init__(self):
-        self.api_url: str = (
-            "https://www.rngdle.com/api/users/{}/rolls?limit={}&offset={}"
-        )
+        self.api_url: str = "https://www.rngdle.com/api/users/{}/rolls?limit={}&offset={}"
 
     def get_user_rolls(
         self,

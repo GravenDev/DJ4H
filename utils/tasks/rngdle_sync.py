@@ -37,16 +37,12 @@ async def _process_user(
 
     _last_rngdle_sync = datetime.datetime.now()
 
-    user_rolls = await RNGdleDao.get_user_rolls(
-        int(db_user.user_id), int(db_user.guild_id)
-    )
+    user_rolls = await RNGdleDao.get_user_rolls(int(db_user.user_id), int(db_user.guild_id))
     most_recent_timestamp = max((int(roll.date) for roll in user_rolls), default=0)
 
     utc = datetime.UTC
     last_reset = datetime.datetime.now(utc).date()
-    last_roll_date = datetime.datetime.fromtimestamp(
-        most_recent_timestamp // 1000, utc
-    ).date()
+    last_roll_date = datetime.datetime.fromtimestamp(most_recent_timestamp // 1000, utc).date()
 
     if last_roll_date >= last_reset:
         # No need to fetch any rolls
@@ -84,9 +80,7 @@ async def _process_user(
                 )
     except Exception:
         stats["failed"] += 1
-        LOGGER.error(
-            f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}"
-        )
+        LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")
 
     return stats
 
@@ -124,9 +118,7 @@ async def rngdle_fetch_task() -> list[dict[str, int]]:
     else:
         async with asyncio.TaskGroup() as task_group:
             tasks = [
-                task_group.create_task(
-                    _process_user(rng_client, user, log_mode="background")
-                )
+                task_group.create_task(_process_user(rng_client, user, log_mode="background"))
                 for user in users
             ]
         stats = [task.result() for task in tasks]
@@ -169,5 +161,4 @@ async def sync_guild_users(guild_id: int) -> dict[str, int]:
         for stat, amount in stats.items():
             stats_summary.setdefault(stat, 0)
             stats_summary[stat] += amount
-    print("summary", stats_summary)
     return stats_summary
