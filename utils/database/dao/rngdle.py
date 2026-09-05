@@ -164,6 +164,23 @@ class RNGdleDao:
         return None
 
     @staticmethod
+    async def get_user_most_recent_roll(user_id: int, guild_id: int) -> RNGdle | None:
+        async for session in get_db():
+            most_recent_date = (
+                select(func.max(RNGdle.date))
+                .filter(RNGdle.user_id == user_id, RNGdle.guild_id == guild_id)
+                .scalar_subquery()
+            )
+            query = select(RNGdle).filter(
+                RNGdle.user_id == user_id,
+                RNGdle.guild_id == guild_id,
+                RNGdle.date == most_recent_date,
+            )
+            rows = await session.execute(query)
+            return rows.scalars().first()
+        return None
+
+    @staticmethod
     async def get_server_rank_by_total(user_id: int, guild_id: int) -> int:
         async for session in get_db():
             query = (

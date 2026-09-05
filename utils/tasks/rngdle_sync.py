@@ -1,10 +1,13 @@
+import asyncio
 import datetime
+import time
 import traceback
 
 from discord.ext import tasks
 
 from config import LOGGER, RNGDLE_SYNC_INTERVAL, RNGDLE_TABLE_SYNC_INTERVAL
 from utils.database.dao.rngdle import RNGdleDao
+from utils.database.schema import RNGdleUser
 from utils.rngdle import (
     RNGdle as RNGdleClient,
     update_compressed_score_to_percent_table,
@@ -14,7 +17,9 @@ from utils.rngdle import (
 _last_rngdle_sync = datetime.datetime.fromtimestamp(0)
 
 
-async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "background") -> dict:
+async def _process_user(
+    rng_client: RNGdleClient, db_user: RNGdleUser, log_mode: str = "background"
+) -> dict[str, int]:
     """
     Fetch rolls for one user and store them into DB history.
 
@@ -28,17 +33,32 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
     """
     global _last_rngdle_sync
 
-    processed = 0
-    failed = 0
+    stats = {"fetched": 0, "processed": 0, "failed": 0}
 
     _last_rngdle_sync = datetime.datetime.now()
 
+    most_recent_roll = await RNGdleDao.get_user_most_recent_roll(
+        int(db_user.user_id), int(db_user.guild_id)
+    )
+    most_recent_timestamp = int(most_recent_roll.date) if most_recent_roll else 0
+
+    utc = datetime.UTC
+    last_reset = datetime.datetime.now(utc).date()
+    last_roll_date = datetime.datetime.fromtimestamp(most_recent_timestamp // 1000, utc).date()
+
+    if last_roll_date >= last_reset:
+        # No need to fetch any rolls
+        return stats
+
     try:
-        rolls = rng_client.get_user_rolls(db_user.rng_username)
+        rolls = rng_client.get_user_rolls(
+            str(db_user.rng_username), threshold_timestamp=most_recent_timestamp
+        )
         if not rolls:
             LOGGER.debug(f"No rolls found for {db_user.rng_username}")
-            return {"processed": 0, "failed": 0}
+            return stats
 
+        stats["fetched"] += len(rolls)
         for roll in rolls:
             try:
                 inserted = await RNGdleDao.upsert_rngdle(
@@ -50,27 +70,27 @@ async def _process_user(rng_client: RNGdleClient, db_user, log_mode: str = "back
                     badges=roll.badges,
                 )
                 if inserted:
-                    processed += 1
+                    stats["processed"] += 1
                     if log_mode == "background":
                         LOGGER.info(
                             f"Stored/updated rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
                         )
             except Exception:
-                failed += 1
+                stats["failed"] += 1
                 LOGGER.error(
                     f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}"
                 )
     except Exception:
-        failed += 1
+        stats["failed"] += 1
         LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")
 
-    return {"processed": processed, "failed": failed}
+    return stats
 
 
 @tasks.loop(seconds=RNGDLE_SYNC_INTERVAL)
 async def rngdle_autosync_task() -> None:
     """Every 12 hours, fetch all registered users and sync their rolls."""
-    return await rngdle_fetch_task()
+    await rngdle_fetch_task()
 
 
 @rngdle_autosync_task.error
@@ -89,18 +109,25 @@ async def on_rngdle_sync_error(exc: Exception) -> None:
     LOGGER.error(f"RNGdle table update task error: {exc}")
 
 
-async def rngdle_fetch_task() -> None:
+async def rngdle_fetch_task() -> list[dict[str, int]]:
     """Fetch all registered users and sync their rolls."""
     rng_client = RNGdleClient()
     LOGGER.info("RNGdle sync: starting pass to fetch registered users")
     users = await RNGdleDao.get_all_registered_users()
     if not users:
         LOGGER.info("RNGdle sync: no registered users found")
+        stats = []
     else:
-        for user in users:
-            await _process_user(rng_client, user, log_mode="background")
+        async with asyncio.TaskGroup() as task_group:
+            tasks = [
+                task_group.create_task(_process_user(rng_client, user, log_mode="background"))
+                for user in users
+            ]
+        stats = [task.result() for task in tasks]
 
     LOGGER.info(f"RNGdle sync: pass complete")
+
+    return stats
 
 
 RNGdle_COOLDOWN = datetime.timedelta(minutes=5)
@@ -114,30 +141,26 @@ async def rngdle_fetch_with_cooldown() -> None:
             f"RNGdle: did not fetch users because of cooldown (elapsed: {round(since_last_sync.total_seconds())}s; cooldown: {round(RNGdle_COOLDOWN.total_seconds())}s)"
         )
         return
-    return await rngdle_fetch_task()
+    await rngdle_fetch_task()
 
 
-async def sync_guild_users(guild_id: int) -> dict:
+async def sync_guild_users(guild_id: int) -> dict[str, int]:
     """
     Manually sync all RNGdle users for a specific guild.
     Returns a dict with counts of processed and failed users.
     """
-    rng_client = RNGdleClient()
     users = await RNGdleDao.get_registered_users(guild_id)
 
     if not users:
-        return {"processed": 0, "failed": 0, "users_count": 0}
+        return {"fetched": 0, "processed": 0, "failed": 0, "users_count": 0}
 
-    total_processed = 0
-    total_failed = 0
+    all_stats = await rngdle_fetch_task()
 
-    for user in users:
-        stats = await _process_user(rng_client, user, log_mode="manual")
-        total_processed += stats["processed"]
-        total_failed += stats["failed"]
-
-    return {
-        "processed": total_processed,
-        "failed": total_failed,
+    stats_summary = {
         "users_count": len(users),
     }
+    for stats in all_stats:
+        for stat, amount in stats.items():
+            stats_summary.setdefault(stat, 0)
+            stats_summary[stat] += amount
+    return stats_summary
