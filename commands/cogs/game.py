@@ -30,13 +30,9 @@ class Game(commands.Cog):
         self.bot = bot
         self.leaderboard_generator = LeaderboardGenerator()
 
-    jd4h = SlashCommandGroup(
-        name="jd4h", description="Commands for the 4h game"
-    )
+    jd4h = SlashCommandGroup(name="jd4h", description="Commands for the 4h game")
 
-    jd4h_admin = SlashCommandGroup(
-        name="jd4h-admin", description="JD4H admin commands"
-    )
+    jd4h_admin = SlashCommandGroup(name="jd4h-admin", description="JD4H admin commands")
 
     @jd4h.command()
     async def score(self, ctx, member: discord.Member | None = None) -> None:
@@ -97,9 +93,7 @@ class Game(commands.Cog):
         self,
         ctx,
         channel: discord.TextChannel,
-        delay: discord.Option(
-            str, description="Delay between messages. Ex: 30s, 5m, 4h, 3d"
-        ),
+        delay: discord.Option(str, description="Delay between messages. Ex: 30s, 5m, 4h, 3d"),
     ) -> None:
         """Config game channel."""
         if not ctx.guild:
@@ -114,18 +108,14 @@ class Game(commands.Cog):
 
         if await GuildsDao.get_guild(ctx.guild.id) is None:
             await GuildsDao.add_guild(ctx.guild.id, channel.id, converted_time)
-            await ctx.respond(
-                f"Configuration setup: Channel: {channel.mention}, Delay: {delay}."
-            )
+            await ctx.respond(f"Configuration setup: Channel: {channel.mention}, Delay: {delay}.")
             LOGGER.info(
                 f"Guild {ctx.guild.id} configured with channel {channel.id} and delay {converted_time} seconds."
             )
             return
 
         await GuildsDao.update_guild(ctx.guild.id, channel.id, converted_time)
-        await ctx.respond(
-            f"Configuration updated: Channel: {channel.mention}, Delay: {delay}."
-        )
+        await ctx.respond(f"Configuration updated: Channel: {channel.mention}, Delay: {delay}.")
         LOGGER.info(
             f"Guild {ctx.guild.id} updated with channel {channel.id} and delay {converted_time} seconds."
         )
@@ -143,17 +133,11 @@ class Game(commands.Cog):
         if user is None:
             await UserDao.add_user(member.id, ctx.guild.id, score)
             await ctx.respond(f"Set user {member.mention}'s score to {score}.")
-            LOGGER.info(
-                f"User {member.id} added to guild {ctx.guild.id} with score {score}."
-            )
+            LOGGER.info(f"User {member.id} added to guild {ctx.guild.id} with score {score}.")
         else:
             await UserDao.update_user(member.id, ctx.guild.id, score)
-            await ctx.respond(
-                f"User {member.mention}'s score updated to {score}."
-            )
-            LOGGER.info(
-                f"User {member.id} updated in guild {ctx.guild.id} with score {score}."
-            )
+            await ctx.respond(f"User {member.mention}'s score updated to {score}.")
+            LOGGER.info(f"User {member.id} updated in guild {ctx.guild.id} with score {score}.")
 
     @jd4h_admin.command(description="Unset a user's score")
     @discord.default_permissions(administrator=True)
@@ -166,9 +150,7 @@ class Game(commands.Cog):
         user = await UserDao.get_user(member.id, ctx.guild.id)
 
         if user is None:
-            await ctx.respond(
-                f"User {member.mention} does not have a score set."
-            )
+            await ctx.respond(f"User {member.mention} does not have a score set.")
             return
 
         await UserDao.delete_user(member.id, ctx.guild.id)

@@ -38,7 +38,7 @@ class RNGdle(Base):
     date = Column(BigInteger, nullable=False)
     score = Column(BigInteger, nullable=False)
     number = Column(BigInteger, nullable=False)
-    badge_count = Column(Integer, nullable=False, server_default='0')
+    badge_count = Column(Integer, nullable=False, server_default="0")
 
 
 class RNGdleUser(Base):

@@ -15,9 +15,7 @@ from config import LOGGER
 
 ROOT_PATH = Path(__file__).parent.parent
 SCORE_TO_PERCENT_PATH = ROOT_PATH / "ressources" / "rngdle" / "score_to_percent.json"
-COMPRESSED_SCORE_TO_PERCENT_PATH = SCORE_TO_PERCENT_PATH.with_stem(
-    "compressed_score_to_percent"
-)
+COMPRESSED_SCORE_TO_PERCENT_PATH = SCORE_TO_PERCENT_PATH.with_stem("compressed_score_to_percent")
 
 
 class UserRolls:
@@ -48,9 +46,7 @@ def to_timestamp(date: str) -> int:
 
 def parse_score_to_percent_table(data: str) -> dict[str, str]:
     ENTRY_RE = re.compile(r"(\w+)\s*:\s*(\d*(?:\.\d+)?)")
-    table: dict[str, str] = {
-        score: percent for score, percent in ENTRY_RE.findall(data)
-    }
+    table: dict[str, str] = {score: percent for score, percent in ENTRY_RE.findall(data)}
     return table
 
 
@@ -97,7 +93,6 @@ def fetch_score_to_percent_string():
 
 
 def load_score_to_percent_table():
-
     with open(SCORE_TO_PERCENT_PATH) as file:
         data_raw = file.read()
 
@@ -140,7 +135,6 @@ def update_compressed_score_to_percent_table():
 
 
 def compress_score_to_percent(dico: dict[int, float]) -> dict[int, float]:
-
     # Compute a dict that stores for each percent which is the lowest score to reach that percent
     percent_to_score_min: dict[float, int] = {}
     for score, percent in dico.items():
@@ -149,9 +143,7 @@ def compress_score_to_percent(dico: dict[int, float]) -> dict[int, float]:
             percent_to_score_min[percent_rounded] = score
 
     # Invert the dict to get a score that serves as a lower bound to determine the percent
-    compressed_dico = {
-        score: percent for percent, score in percent_to_score_min.items()
-    }
+    compressed_dico = {score: percent for percent, score in percent_to_score_min.items()}
     return compressed_dico
 
 
@@ -211,7 +203,6 @@ TIER_TO_COLOR = {
 
 
 def get_score_tier_from_compressed_table(score: int):
-
     if score < 0:
         LOGGER.warning(f"RNGdle: unexpected negative score ({score}).")
         return Tier.ERROR
@@ -233,9 +224,7 @@ def get_score_tier_from_compressed_table(score: int):
     elif percent < 100:
         tier = Tier.MYTHIC
     else:
-        LOGGER.warning(
-            f"RNGdle: unexpected score ({score}) and percent value ({percent})."
-        )
+        LOGGER.warning(f"RNGdle: unexpected score ({score}) and percent value ({percent}).")
         return Tier.ERROR
 
     return tier
@@ -314,7 +303,6 @@ class RNGdle:
 
 
 if __name__ == "__main__":
-
     # Perform some operations on rngdle resources to test updates mechanisms
     arg_parser = argparse.ArgumentParser()
 

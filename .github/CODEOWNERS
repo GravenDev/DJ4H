@@ -1,0 +1,12 @@
+# Python files
+*.py                        @gamingdy @Alessevan
+pyproject.toml              @gamingdy @Alessevan
+poetry.lock                 @gamingdy @Alessevan
+alembic.ini                 @gamingdy @Alessevan
+config.py                   @gamingdy @Alessevan
+
+# Infra / CI
+Dockerfile                  @Lindwen
+compose*.yml                @Lindwen
+compose*.yaml               @Lindwen
+.github/workflows/*         @Lindwen

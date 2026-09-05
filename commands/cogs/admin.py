@@ -11,9 +11,7 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    admin = SlashCommandGroup(
-        name="admin", description="General bot admin commands"
-    )
+    admin = SlashCommandGroup(name="admin", description="General bot admin commands")
 
     @admin.command(description="Dump the bot's log")
     @discord.default_permissions(administrator=True)

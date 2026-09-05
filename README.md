@@ -6,6 +6,9 @@
 
 # <p align="center">`DJ4H`</p>
 
+[![CI](https://github.com/GravenDev/DJ4H/actions/workflows/ci.yml/badge.svg)](https://github.com/GravenDev/DJ4H/actions/workflows/ci.yml)
+[![Build & Deploy DJ4H](https://github.com/GravenDev/DJ4H/actions/workflows/deploy.yml/badge.svg)](https://github.com/GravenDev/DJ4H/actions/workflows/deploy.yml)
+
 All the projects in the <code>AsyncCommunityDiscord</code> organisation are used by the discord server <code>
 discord.gg/graven</code> both by the moderators and the members.
 Most of the contributors are part of the staff but the members are also allowed to contribute.
@@ -118,6 +121,15 @@ poetry run python main.py
 ```bash
 # Build and run with Docker Compose
 docker-compose -f compose-prod.yml up -d
+```
+
+Make a deployment
+```bash
+# clone repository
+git checkout master
+git pull
+git tag vx.x.x
+git push origin vx.x.x
 ```
 
 ### Development Mode with Docker
