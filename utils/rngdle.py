@@ -274,11 +274,11 @@ def format_percent(percent: float):
 
 class RNGdle:
 
-    fetch_size: int = 10
+    fetch_size: int = 100
 
     def __init__(self):
         self.api_url: str = (
-            f"https://www.rngdle.com/api/users/{{}}/rolls?limit={self.fetch_size}&offset={{}}"
+            "https://www.rngdle.com/api/users/{}/rolls?limit={}&offset={}"
         )
 
     def get_user_rolls(
@@ -290,8 +290,11 @@ class RNGdle:
     ) -> list[UserRolls] | None:
         if previous_roll is None:
             previous_roll = []
+            fetch_size = 10  # small fetch size for first fetches
+        else:
+            fetch_size = self.fetch_size
 
-        url = self.api_url.format(username, offset)
+        url = self.api_url.format(username, fetch_size, offset)
         response = requests.get(url)
         if response.status_code == 200:
             result = response.json()
@@ -302,7 +305,7 @@ class RNGdle:
                 return self.get_user_rolls(
                     username,
                     previous_roll=previous_roll,
-                    offset=offset + self.fetch_size,
+                    offset=offset + fetch_size,
                     threshold_timestamp=threshold_timestamp,
                 )
             return previous_roll
