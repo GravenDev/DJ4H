@@ -28,8 +28,8 @@ class UserRolls:
         self.badges = badges
 
 
-def to_user_rolls(rolls: list):
-    user_rolls = []
+def to_user_rolls(rolls: list[dict[str, int | str]]) -> list[UserRolls]:
+    user_rolls: list[UserRolls] = []
     for roll in rolls:
         number = roll["number"]
         score = roll["totalScore"]
@@ -40,7 +40,7 @@ def to_user_rolls(rolls: list):
     return user_rolls
 
 
-def to_timestamp(date):
+def to_timestamp(date: str) -> int:
     dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
     timestamp = int(dt.timestamp() * 1000)
     return timestamp
@@ -75,7 +75,7 @@ def evaluate_score_to_percent_table(table: dict[str, str]) -> dict[int, float]:
 
 def fetch_score_to_percent_string():
 
-    TABLE_FILE_URL = "https://www.rngdle.com/_next/static/chunks/13342e749f60f9c2.js"
+    TABLE_FILE_URL = "https://www.rngdle.com/_next/static/chunks/421374ec80474347.js"
 
     js_file = requests.get(TABLE_FILE_URL).content
 
@@ -273,11 +273,20 @@ def format_percent(percent: float):
 
 
 class RNGdle:
+
+    fetch_size: int = 10
+
     def __init__(self):
-        self.api_url = "https://www.rngdle.com/api/users/{}/rolls?limit=100&offset={}"
+        self.api_url: str = (
+            f"https://www.rngdle.com/api/users/{{}}/rolls?limit={self.fetch_size}&offset={{}}"
+        )
 
     def get_user_rolls(
-        self, username, previous_roll: list[UserRolls] | None = None, offset=0
+        self,
+        username: str,
+        previous_roll: list[UserRolls] | None = None,
+        offset: int = 0,
+        threshold_timestamp: int = 0,
     ) -> list[UserRolls] | None:
         if previous_roll is None:
             previous_roll = []
@@ -287,9 +296,15 @@ class RNGdle:
         if response.status_code == 200:
             result = response.json()
             user_roll = to_user_rolls(result["rolls"])
-            previous_roll += user_roll
-            if result["hasMore"]:
-                return self.get_user_rolls(username, previous_roll, offset + 100)
+            previous_roll.extend(user_roll)
+            # Check if the user has more rolls that haven't been registered yet
+            if result["hasMore"] and user_roll[-1].date > threshold_timestamp:
+                return self.get_user_rolls(
+                    username,
+                    previous_roll=previous_roll,
+                    offset=offset + self.fetch_size,
+                    threshold_timestamp=threshold_timestamp,
+                )
             return previous_roll
         else:
             return None
