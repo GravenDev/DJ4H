@@ -5,4 +5,4 @@ __pycache__
 *.env
 logs/
 dj4h.db
-resources/rngdle/*.json
+ressources/rngdle/*.json
