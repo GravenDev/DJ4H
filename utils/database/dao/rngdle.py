@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
-from sqlalchemy.sql.expression import select
+from sqlalchemy import delete
 from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.expression import select
 
+from utils import RNGdleUpsert
 from utils.database import RNGdle, RNGdleGuildConfig, RNGdleUser, get_db
 
 
@@ -91,34 +94,32 @@ class RNGdleDao:
         return False
 
     @staticmethod
-    async def upsert_rngdle(
-        user_id: int,
-        guild_id: int,
-        date: int,
-        score: int,
-        number: int,
-        badges: int,
-    ) -> bool:
+    async def upsert_batch(rolls: list[RNGdleUpsert]):
+        async for session in get_db():
+            for roll in rolls:
+                await RNGdleDao.upsert_single(session, roll)
+            await session.commit()
+
+    @staticmethod
+    async def upsert_single(session: AsyncSession, roll: RNGdleUpsert) -> bool:
         """
         INSERT a roll into RNGdle history if it does not already exist.
         Returns True if inserted, False if an identical roll already exists.
         We consider a roll identical if user_id + date + number match an existing row.
         """
-        async for session in get_db():
-            if await RNGdleDao.roll_exists(user_id, date, number):
-                return False
+        if await RNGdleDao.roll_exists(roll.user_id, roll.date, roll.number):
+            return False
 
-            rng = RNGdle(
-                user_id=user_id,
-                guild_id=guild_id,
-                date=date,
-                score=score,
-                number=number,
-                badge_count=badges,
-            )
-            session.add(rng)
-            await session.commit()
-            return True
+        rng = RNGdle(
+            user_id=roll.user_id,
+            guild_id=roll.guild_id,
+            date=roll.date,
+            score=roll.score,
+            number=roll.number,
+            badge_count=roll.badges,
+        )
+        session.add(rng)
+        return True
 
     @staticmethod
     async def update_roll(
