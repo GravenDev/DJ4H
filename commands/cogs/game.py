@@ -5,10 +5,10 @@ from discord import SlashCommandGroup
 from discord.ext import commands
 
 from config import LOGGER, MAGIC_COLOR
-from utils import get_or_fetch_user
 from utils.database.dao.guilds import GuildsDao
 from utils.database.dao.users import UserDao
-from utils.image_generator import JD4HLeaderboardUser, LeaderboardGenerator
+from utils.image_generator import JD4HLeaderboardUser, LeaderboardGenerator, fetch_base_avatar
+from utils.tasks.users_cache_update import get_or_fetch_user
 
 
 def convert_time_to_seconds(time_str: str) -> int:
@@ -70,13 +70,14 @@ class Game(commands.Cog):
 
         users: list[JD4HLeaderboardUser] = []
         for user in leaderboard:
-            user_data = await get_or_fetch_user(self.bot, user.user_id)
+            user_data = await get_or_fetch_user(self.bot, int(user.user_id))
             if user_data is None:
                 continue
             u = JD4HLeaderboardUser()
             u.user = user_data
             u.score = str(user.score)
             u.rank = await UserDao.get_rank(user.user_id, user.guild_id)
+            u.avatar_img = await fetch_base_avatar(user.user)
             users.append(u)
 
         generated = await self.leaderboard_generator.generate_leaderboard(users)

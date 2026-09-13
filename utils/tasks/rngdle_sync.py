@@ -122,7 +122,7 @@ async def on_rngdle_sync_error(exc: Exception) -> None:
 @tasks.loop(seconds=RNGDLE_TABLE_SYNC_INTERVAL)
 async def rngdle_score_to_percent_autoupdate_task() -> None:
     """Every week, update the RNGdle score to percent table."""
-    has_changed = update_compressed_score_to_percent_table()
+    has_changed = await update_compressed_score_to_percent_table()
     if has_changed:
         # The table has changed, and so the scores have all changed. Update all stored rolls with their new score
         await rngdle_fetch_task(force_full_fetch=True)

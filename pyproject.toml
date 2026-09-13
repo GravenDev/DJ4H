@@ -14,7 +14,8 @@ dependencies = [
     "sqlalchemy[asyncio] (==2.0.52)",
     "aiosqlite (==0.22.1)",
     "alembic (==1.19.2)",
-    "requests (>=2.34.2,<3.0.0)",
+    "requests (==2.34.2)",
+    "aiohttp (==3.14.1)",
 ]
 
 [tool.poetry]
@@ -24,10 +25,10 @@ package-mode = false
 black = "26.5.1"
 
 [tool.autopep8]
-max_line_length=100
+max_line_length = 100
 
 [tool.ruff]
-line-length=100
+line-length = 100
 
 [tool.black]
-line-length=100
+line-length = 100

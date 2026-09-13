@@ -1,3 +1,4 @@
+import asyncio
 from datetime import time, timezone
 from io import BytesIO
 
@@ -5,14 +6,15 @@ import discord
 from discord.ext import tasks
 
 from config import LOGGER
-from utils import get_or_fetch_user
 from utils.database.dao.rngdle import (
     RNGdleDao,
     RNGdleGuildConfigDao,
     get_yesterday_range,
 )
+from utils.database.schema import RNGdle as RNGdleCol
 from utils.image_generator import LeaderboardGenerator, RNGdleLeaderboardUser
 from utils.tasks.rngdle_sync import rngdle_fetch_task
+from utils.tasks.users_cache_update import get_or_fetch_user, init_user_cache
 
 
 # Task runs at 1AM UTC because rngdle.com is unavailable around 0AM
@@ -40,23 +42,23 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         if not scores:
             continue
 
-        users: list[discord.User] = []
-        for score in scores:
-            user = await get_or_fetch_user(bot, score.user_id)
-            if user is not None:
-                users.append(user)
-
-        if not users:
-            continue
-
-        generator = LeaderboardGenerator()
         leaderboard_users: list[RNGdleLeaderboardUser] = []
-        for user, score_col, rank in zip(users, scores, range(len(users))):
+
+        async def add_ldb_user(score_col: RNGdleCol, rank: int):
+            user = await get_or_fetch_user(bot, int(score_col.user_id))
+            if user is None:
+                return
+
             score = int(score_col.score)
             number = int(score_col.number)
-            u = RNGdleLeaderboardUser.create_user_instance(user, score, number, rank + 1)
+            u = await RNGdleLeaderboardUser.create_user_instance(user, score, number, rank)
             leaderboard_users.append(u)
 
+        async with asyncio.TaskGroup() as tg:
+            for index, score_col in enumerate(scores):
+                tg.create_task(add_ldb_user(score_col, index + 1))
+
+        generator = LeaderboardGenerator()
         generated = await generator.generate_leaderboard(leaderboard_users)
         buffer = BytesIO()
         generated.save(buffer, format="PNG")
@@ -64,8 +66,12 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         file = discord.File(fp=buffer, filename="leaderboard.png")
 
         top_score = scores[0].score
-        top_users = [users[i] for i, score in enumerate(scores) if score.score == top_score]
-        mentions = " ".join(u.mention for u in top_users if u.id != 610843701861679108)
+        top_users = [
+            leaderboard_users[i].user for i, score in enumerate(scores) if score.score == top_score
+        ]
+        mentions = " ".join(
+            u.mention if u.id != 610843701861679108 else "TnTube" for u in top_users
+        )
 
         await channel.send(
             content=f"🏆 Daily RNGDLE leaderboard — Félicitations à {mentions} !",
@@ -100,6 +106,10 @@ if __name__ == "__main__":
         LOGGER.info("Database initialized successfully.")
         LOGGER.info("------")
 
+        await init_user_cache()
+
+        await rngdle_daily_leaderboard_task(bot)
+        # Send a second time to test cache
         await rngdle_daily_leaderboard_task(bot)
         await bot.close()
 

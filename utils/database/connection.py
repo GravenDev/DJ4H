@@ -7,5 +7,5 @@ Base = declarative_base()
 
 SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_PATH}"
 
-engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_async_engine(SQLALCHEMY_DATABASE_URL, pool_size=10, max_overflow=20)
 session_local = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)

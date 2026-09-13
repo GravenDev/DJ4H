@@ -1,14 +1,14 @@
 import argparse
-from ast import literal_eval
 import asyncio
 import bisect
-from datetime import datetime
-from enum import Enum
 import json
-from math import ceil, floor
-from pathlib import Path
 import re
 import typing
+from ast import literal_eval
+from datetime import datetime
+from enum import Enum
+from math import ceil, floor
+from pathlib import Path
 
 import aiohttp
 import requests
@@ -71,28 +71,53 @@ def evaluate_score_to_percent_table(table: dict[str, str]) -> dict[int, float]:
     return evaluated_data
 
 
-def fetch_score_to_percent_string():
+async def fetch_single_script(session, script_url: str) -> dict[str, str | int]:
+    async with session.get(script_url) as response:
+        data = await response.text()
+        return {"url": script_url, "size": len(data), "content": data}
 
-    TABLE_FILE_URL = "https://www.rngdle.com/_next/static/chunks/1ff01b430aea6d14.js"
 
-    try:
-        response = requests.get(TABLE_FILE_URL, timeout=20)
-    except requests.exceptions.Timeout as e:
-        LOGGER.warning(f"RNGdle table fetch: fetching the table timed out, got err {e}")
-        return ""
+async def fetch_every_script(script_list: list[str]) -> tuple:
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_single_script(session, url) for url in script_list]
+        results = await asyncio.gather(*tasks)
 
-    js_file = response.content
-    if len(js_file) < 100_000:
+        return results
+
+
+async def get_table_file() -> dict[str, str | int]:
+    """
+    Finds every .js script in the RNGdle main page. Queries them all and keep the biggest one.
+    """
+    scripts: list[str] = []
+
+    async with aiohttp.ClientSession() as session:
+        main_page = await session.get("https://rngdle.com")
+        html = await main_page.text()
+
+        scripts = re.findall(r'<script\b[^>]*\bsrc=["\']([^"\']+)["\']', str(html))
+
+    urls = [f"https://rngdle.com{filepath}" for filepath in scripts]
+    every_file = await fetch_every_script(urls)
+    # The searched file is assumed to be the heaviest one 🙏
+    return max(every_file, key=lambda d: d["size"])
+
+
+async def fetch_score_to_percent_string():
+
+    js_file: dict[str, str | int] = await get_table_file()
+
+    if js_file["size"] < 100_000:
         LOGGER.warning(
-            f"RNGdle table fetch: The file *seems* too small to contain the score to percent table ({len(js_file)} < 100 KB)"
+            f"RNGdle: The file *seems* too small to contain the score to percent table ({js_file["size"]} < 100 KB)"
         )
         return ""
 
     # Detect the score percentiles dict-like structure
     dict_pattern = re.compile(
-        r"{(?:(?:0x[a-fA-F0-9]+|\d+|\d+e\d+)\s*:\s*(?:\d+(?:\.\d+)?|\.\d+),?)+}"
+        r"{(?>(?>0x[a-fA-F0-9]+|\d+(?>e\d+)?)\s*:\s*(?>\d+(?>\.\d+)?|\.\d+)(?>,\s*)?)+}"
     )
-    result = dict_pattern.search(str(js_file))
+    result = dict_pattern.search(str(js_file["content"]))
     if result is None:
         return ""
 
@@ -132,10 +157,10 @@ def store_compressed_score_to_percent_table(new_table: dict[int, float]):
         json.dump(new_table, file)
 
 
-def update_compressed_score_to_percent_table() -> bool:
+async def update_compressed_score_to_percent_table() -> bool:
     "Updates the RNGdle score->percent table. Returns whether the table has changed."
     LOGGER.info("RNGdle table sync: Start update of the score to percent table")
-    score_to_percent_raw = fetch_score_to_percent_string()
+    score_to_percent_raw = await fetch_score_to_percent_string()
     if not score_to_percent_raw:
         LOGGER.warning(
             "RNGdle: Could not fetch the score to percent table from the website, aborting the update"

@@ -23,6 +23,8 @@ MAGIC_COLOR = 5220337
 RNGDLE_SYNC_INTERVAL = int(os.getenv("RNGDLE_SYNC_INTERVAL", str(12 * 60 * 60)))
 # RNGdle table to percent sync interval in seconds (default 7 * 24 * 60 * 60s = 7 days)
 RNGDLE_TABLE_SYNC_INTERVAL = int(os.getenv("RNGDLE_TABLE_SYNC_INTERVAL", str(7 * 24 * 60 * 60)))
+# Frequency of updates for the local user cache (default 30 * 60s = 30 minutes)
+USER_CACHE_SYNC_INTERVAL = int(os.getenv("USER_CACHE_SYNC_INTERVAL", str(30 * 60)))
 
 
 def setup_logging():

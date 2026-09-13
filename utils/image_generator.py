@@ -27,6 +27,7 @@ type ColorType = tuple[int, int, int]
 class LeaderboardUser:
     user: discord.User
     rank: int
+    avatar_img: Image.Image
 
     column_headers: list[str] = []
     column_x_offsets: list[int] = []
@@ -54,10 +55,11 @@ class RNGdleLeaderboardUser(LeaderboardUser):
         return [self.tirage, self.score, self.percent_text]
 
     @classmethod
-    def create_user_instance(cls, user: discord.User, score: int, number: int, rank: int):
+    async def create_user_instance(cls, user: discord.User, score: int, number: int, rank: int):
         new_user = cls()
         new_user.user = user
         new_user.score = format_number(score)
+        new_user.avatar_img = await fetch_base_avatar(user)
         new_user.tirage = f"{number:,}".replace(",", " ")
         new_user.rank = rank
         new_user.tier = get_score_tier(score)
@@ -341,12 +343,7 @@ class LeaderboardGenerator:
             avatar_y = y_pos + 15
             avatar_size = 60
             try:
-                avatar_data = await user.user.avatar.read()
-                avatar_img = (
-                    Image.open(BytesIO(avatar_data))
-                    .resize((avatar_size, avatar_size))
-                    .convert("RGBA")
-                )
+                avatar_img = user.avatar_img.resize((avatar_size, avatar_size)).convert("RGBA")
                 self.create_avatar_mask(avatar_img, avatar_size, avatar_x, avatar_y, img)
             except Exception:
                 default_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
@@ -759,15 +756,6 @@ class ServerStatGenerator:
 
         draw.text((170, 45), "RNGdle - Server Stats", fill=self.TEXT_COLOR, font=self.font_title)
 
-        async def fetch_avatar(member, size):
-            if member:
-                try:
-                    data = await member.display_avatar.read()
-                    return Image.open(BytesIO(data)).resize((size, size)).convert("RGBA")
-                except:
-                    pass
-            return Image.new("RGBA", (size, size), (120, 120, 120, 255))
-
         best_avatar = await fetch_avatar(stats["best_roll"].get("member"), 32)
         worst_avatar = await fetch_avatar(stats["worst_roll"].get("member"), 32)
 
@@ -1132,3 +1120,22 @@ class OverallLeaderboardGenerator:
         mask = mask.resize((avatar_size, avatar_size), Image.Resampling.LANCZOS)
         avatar_img.putalpha(mask)
         img.paste(avatar_img, (avatar_x, avatar_y), avatar_img)
+
+
+async def fetch_base_avatar(user: discord.User) -> Image.Image:
+    return Image.open(BytesIO(await user.display_avatar.read()))
+
+
+async def fetch_avatar(member: discord.User, size: int) -> Image.Image:
+    if member:
+        try:
+            base_avatar = await fetch_base_avatar(member)
+            return base_avatar.resize((size, size)).convert("RGBA")
+        except (discord.DiscordException, discord.HTTPException, discord.NotFound):
+            LOGGER.warning(f"Could not fetch avatar for member {member.name} (id {member.id})")
+        except Exception:
+            LOGGER.warning(
+                f"Failed to create avatar image for member {member.name} (id {member.id})"
+            )
+
+    return Image.new("RGBA", (size, size), (120, 120, 120, 255))

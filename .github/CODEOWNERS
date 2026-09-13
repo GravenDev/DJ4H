@@ -6,7 +6,7 @@ alembic.ini                 @gamingdy @Alessevan
 config.py                   @gamingdy @Alessevan
 
 # Infra / CI
-Dockerfile                  @Lindwen
-compose*.yml                @Lindwen
-compose*.yaml               @Lindwen
-.github/workflows/*         @Lindwen
+Dockerfile                  @Lindwen @gamingdy
+compose*.yml                @Lindwen @gamingdy
+compose*.yaml               @Lindwen @gamingdy
+.github/workflows/*         @Lindwen @gamingdy
