@@ -6,7 +6,7 @@ import aiohttp
 from discord.ext import tasks
 
 from config import LOGGER, RNGDLE_SYNC_INTERVAL, RNGDLE_TABLE_SYNC_INTERVAL
-from utils import RNGdleUpsert
+from utils.database import RNGdle
 from utils.database.dao.rngdle import RNGdleDao
 from utils.database.schema import RNGdleUser
 from utils.rngdle import (
@@ -70,7 +70,7 @@ async def _process_user(
             return stats
 
         stats["fetched"] += len(rolls)
-        updated_rolls: list[RNGdleUpsert] = []
+        updated_rolls: list[RNGdle] = []
         for roll in rolls:
             try:
                 already_exists = await RNGdleDao.roll_exists(
@@ -83,13 +83,13 @@ async def _process_user(
                     )
                 else:
                     # Insert the new roll
-                    inserted = RNGdleUpsert(
-                        db_user.user_id,
-                        db_user.guild_id,
-                        roll.date,
-                        roll.score,
-                        roll.number,
-                        roll.badges,
+                    inserted = RNGdle(
+                        user_id=db_user.user_id,
+                        guild_id=db_user.guild_id,
+                        date=roll.date,
+                        score=roll.score,
+                        number=roll.number,
+                        badge_count=roll.badges,
                     )
                     updated_rolls.append(inserted)
 
