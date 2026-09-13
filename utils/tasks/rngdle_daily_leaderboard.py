@@ -17,7 +17,8 @@ from utils.tasks.rngdle_sync import rngdle_fetch_task
 from utils.tasks.users_cache_update import get_or_fetch_user, init_user_cache
 
 
-@tasks.loop(time=time(hour=0, minute=0, tzinfo=timezone.utc))
+# Task runs at 1AM UTC because rngdle.com is unavailable around 0AM
+@tasks.loop(time=time(hour=1, minute=0, tzinfo=timezone.utc))
 async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
     configs = await RNGdleGuildConfigDao.get_all_configured_guilds()
 

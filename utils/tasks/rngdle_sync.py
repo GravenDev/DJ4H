@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import traceback
 
+import aiohttp
 from discord.ext import tasks
 
 from config import LOGGER, RNGDLE_SYNC_INTERVAL, RNGDLE_TABLE_SYNC_INTERVAL
@@ -59,9 +60,10 @@ async def _process_user(
     _last_rngdle_sync = datetime.datetime.now()
 
     try:
-        rolls = rng_client.get_user_rolls(
-            str(db_user.rng_username), threshold_timestamp=most_recent_timestamp
-        )
+        async with aiohttp.ClientSession() as session:
+            rolls = await rng_client.fetch_user_rolls(
+                str(db_user.rng_username), session, threshold_timestamp=most_recent_timestamp
+            )
         if not rolls:
             LOGGER.debug(f"No rolls found for {db_user.rng_username}")
             return stats
