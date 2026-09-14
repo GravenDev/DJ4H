@@ -34,11 +34,11 @@ async def _process_user(
         log_mode: "background" for hourly task, "manual" for explicit refresh command
 
     Returns:
-        dict with keys: processed (int), failed (int)
+        dict of int with keys: fetched, inserted, updated, failed
     """
     global _last_rngdle_sync
 
-    stats = {"fetched": 0, "processed": 0, "failed": 0}
+    stats = {"fetched": 0, "inserted": 0, "updated": 0, "failed": 0}
 
     _last_rngdle_sync = datetime.datetime.now()
 
@@ -71,44 +71,49 @@ async def _process_user(
 
         stats["fetched"] += len(rolls)
         rolls_to_insert: list[RNGdle] = []
+        rolls_to_update: list[RNGdle] = []
         for roll in rolls:
             try:
-                already_exists = await RNGdleDao.roll_exists(
-                    user_id=int(db_user.user_id), date=roll.date, number=roll.number
+                roll_db_entry = RNGdle(
+                    user_id=db_user.user_id,
+                    guild_id=db_user.guild_id,
+                    date=roll.date,
+                    score=roll.score,
+                    number=roll.number,
+                    badge_count=roll.badges,
                 )
+                already_exists = await RNGdleDao.roll_exists(roll_db_entry)
                 if already_exists:
-                    # Update with new score if necessary
-                    await RNGdleDao.update_roll(
-                        int(db_user.user_id), roll.date, roll.score, roll.number, roll.badges
-                    )
+                    # Update the roll with the new score
+                    rolls_to_update.append(roll_db_entry)
+                    if log_mode == "background":
+                        LOGGER.info(
+                            f"Added in update batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
+                        )
                 else:
                     # Insert the new roll
-                    inserted = RNGdle(
-                        user_id=db_user.user_id,
-                        guild_id=db_user.guild_id,
-                        date=roll.date,
-                        score=roll.score,
-                        number=roll.number,
-                        badge_count=roll.badges,
-                    )
-                    rolls_to_insert.append(inserted)
-
-                    if inserted:
-                        stats["processed"] += 1
-                        if log_mode == "background":
-                            LOGGER.info(
-                                f"Added in batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
-                            )
+                    rolls_to_insert.append(roll_db_entry)
+                    if log_mode == "background":
+                        LOGGER.info(
+                            f"Added in insert batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
+                        )
 
             except Exception:
                 stats["failed"] += 1
                 LOGGER.error(
                     f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}"
                 )
-        if len(rolls_to_insert) > 0:
-            await RNGdleDao.upsert_batch(rolls_to_insert)
+        if rolls_to_insert:
+            inserted = await RNGdleDao.upsert_batch(rolls_to_insert)
+            stats["inserted"] += inserted
             if log_mode == "background":
-                LOGGER.info(f"Added {len(rolls_to_insert )} rolls with batch insert")
+                LOGGER.info(f"Added {inserted}/{len(rolls_to_insert)} rolls with batch insert")
+
+        if rolls_to_update:
+            updated = await RNGdleDao.update_batch(rolls_to_update)
+            stats["updated"] += updated
+            if log_mode == "background":
+                LOGGER.info(f"Updated {updated}/{len(rolls_to_update)} rolls with batch update")
     except Exception:
         stats["failed"] += 1
         LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")
@@ -194,12 +199,12 @@ async def rngdle_fetch_with_cooldown() -> None:
 async def sync_guild_users(guild_id: int) -> dict[str, int]:
     """
     Manually sync all RNGdle users for a specific guild.
-    Returns a dict with counts of processed and failed users.
+    Returns a dict with counts of fetched, inserted, updated and failed rolls and users.
     """
     users = await RNGdleDao.get_registered_users(guild_id)
 
     if not users:
-        return {"fetched": 0, "processed": 0, "failed": 0, "users_count": 0}
+        return {"fetched": 0, "inserted": 0, "updated": 0, "failed": 0, "users_count": 0}
 
     all_stats = await rngdle_fetch_task()
 
