@@ -96,11 +96,11 @@ class RNGdleDao:
     async def upsert_batch(rolls: list[RNGdle]):
         async for session in get_db():
             for roll in rolls:
-                await RNGdleDao.upsert_single(session, roll)
+                await RNGdleDao._upsert(session, roll)
             await session.commit()
 
     @staticmethod
-    async def upsert_single(session: AsyncSession, roll: RNGdle) -> bool:
+    async def _upsert(session: AsyncSession, roll: RNGdle) -> bool:
         """
         INSERT a roll into RNGdle history if it does not already exist.
         Returns True if inserted, False if an identical roll already exists.
@@ -108,9 +108,14 @@ class RNGdleDao:
         """
         if await RNGdleDao.roll_exists(roll.user_id, roll.date, roll.number):
             return False
-
         session.add(roll)
         return True
+
+    @staticmethod
+    async def upsert_single(roll: RNGdle):
+        async for session in get_db():
+            await RNGdleDao._upsert(session, roll)
+            await session.commit()
 
     @staticmethod
     async def update_roll(

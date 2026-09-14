@@ -70,7 +70,7 @@ async def _process_user(
             return stats
 
         stats["fetched"] += len(rolls)
-        updated_rolls: list[RNGdle] = []
+        rolls_to_insert: list[RNGdle] = []
         for roll in rolls:
             try:
                 already_exists = await RNGdleDao.roll_exists(
@@ -91,7 +91,7 @@ async def _process_user(
                         number=roll.number,
                         badge_count=roll.badges,
                     )
-                    updated_rolls.append(inserted)
+                    rolls_to_insert.append(inserted)
 
                     if inserted:
                         stats["processed"] += 1
@@ -105,10 +105,10 @@ async def _process_user(
                 LOGGER.error(
                     f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}"
                 )
-        if len(updated_rolls) > 0:
-            await RNGdleDao.upsert_batch(updated_rolls)
+        if len(rolls_to_insert) > 0:
+            await RNGdleDao.upsert_batch(rolls_to_insert)
             if log_mode == "background":
-                LOGGER.info(f"Added {len(updated_rolls)} rolls with batch insert")
+                LOGGER.info(f"Added {len(rolls_to_insert )} rolls with batch insert")
     except Exception:
         stats["failed"] += 1
         LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")
