@@ -9,12 +9,11 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-DEBUG_GUILD_ID = os.getenv("DEBUG_GUILD_ID", None)
-if DEBUG_GUILD_ID is not None:
-    try:
-        DEBUG_GUILD_ID = int(DEBUG_GUILD_ID)
-    except ValueError:
-        raise ValueError("DEBUG_GUILD_ID must be an integer representing a guild ID.")
+env_debug_guild_id = os.getenv("DEBUG_GUILD_ID", None)
+try:
+    DEBUG_GUILD_ID = int(env_debug_guild_id) if env_debug_guild_id is not None else 0
+except ValueError:
+    raise ValueError("DEBUG_GUILD_ID must be an integer representing a guild ID.")
 
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "dj4h.db")

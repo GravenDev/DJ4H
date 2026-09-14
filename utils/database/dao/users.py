@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from sqlalchemy.sql.expression import select
 
 from utils.database import User, get_db
@@ -35,7 +37,7 @@ class UserDao:
             await session.commit()
 
     @staticmethod
-    async def get_leaderboard(guild_id: int, limit: int | None) -> list[type[User]] | None:
+    async def get_leaderboard(guild_id: int, limit: int | None) -> Sequence[User] | None:
         """Asynchronously get the leaderboard for a specific guild."""
         async for session in get_db():
             query = await session.execute(
@@ -56,7 +58,7 @@ class UserDao:
             return -1
         sorted_users = sorted(leaderboard, key=lambda x: x.score, reverse=True)
         for index, user in enumerate(sorted_users):
-            if user.user_id == user_id:
+            if int(user.user_id) == user_id:
                 return index + 1
         return -1
 

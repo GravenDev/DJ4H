@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import pathlib
 from io import BytesIO
 import typing
@@ -234,7 +235,7 @@ class LeaderboardGenerator:
             anchor="rt",
         )
 
-    async def generate_leaderboard(self, users: list[LeaderboardUser]):
+    async def generate_leaderboard(self, users: Sequence[LeaderboardUser]):
         if not users:
             raise ValueError("No users provided")
 
@@ -472,7 +473,9 @@ class ProfileGenerator:
             self.PODIUM_SILVER = None
             self.PODIUM_GOLD = None
 
-    async def generate_profile(self, user: discord.User, username: str, stats: dict):
+    async def generate_profile(
+        self, user: discord.Member | discord.User, username: str, stats: dict[str, typing.Any]
+    ):
         img = Image.new("RGB", (self.WIDTH, self.HEIGHT), self.BG_COLOR)
         draw = ImageDraw.Draw(img)
 
@@ -480,15 +483,7 @@ class ProfileGenerator:
 
         avatar_x, avatar_y, avatar_size = 40, 25, 100
         try:
-            if user:
-                avatar_data = await user.avatar.read()
-                avatar_img = (
-                    Image.open(BytesIO(avatar_data))
-                    .resize((avatar_size, avatar_size))
-                    .convert("RGBA")
-                )
-            else:
-                raise Exception()
+            avatar_img = await fetch_avatar(user, avatar_size)
             self.create_avatar_mask(avatar_img, avatar_size, avatar_x, avatar_y, img)
         except Exception:
             default_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
@@ -734,7 +729,7 @@ class ServerStatGenerator:
             self.font_small = ImageFont.load_default()
             self.font_tiny = ImageFont.load_default()
 
-    async def generate_server_stat(self, guild: discord.Guild, stats: dict):
+    async def generate_server_stat(self, guild: discord.Guild, stats: dict[str, typing.Any]):
         img = Image.new("RGB", (self.WIDTH, self.HEIGHT), self.BG_COLOR)
         draw = ImageDraw.Draw(img)
 
@@ -1070,7 +1065,10 @@ class OverallLeaderboardGenerator:
         )
 
     async def generate_leaderboard(
-        self, users_data: list[dict], start_rank: int = 1, caller_info: dict = None
+        self,
+        users_data: list[dict[str, typing.Any]],
+        start_rank: int = 1,
+        caller_info: dict[str, typing.Any] | None = None,
     ):
         GAP = 20
         base_rows = len(users_data)

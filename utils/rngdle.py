@@ -31,9 +31,9 @@ class UserRolls:
 def to_user_rolls(rolls: list[dict[str, int | str]]) -> list[UserRolls]:
     user_rolls: list[UserRolls] = []
     for roll in rolls:
-        number = roll["number"]
-        score = roll["totalScore"]
-        badges = roll.get("badgeCount", 0)
+        number: int = roll["number"]
+        score: int = roll["totalScore"]
+        badges: int = roll.get("badgeCount", 0)
         time = to_timestamp(roll["rolledAt"])
         user_roll = UserRolls(number, time, score, badges)
         user_rolls.append(user_roll)
@@ -77,7 +77,7 @@ async def fetch_single_script(session, script_url: str) -> dict[str, str | int]:
         return {"url": script_url, "size": len(data), "content": data}
 
 
-async def fetch_every_script(script_list: list[str]) -> tuple:
+async def fetch_every_script(script_list: list[str]) -> list[dict[str, str | int]]:
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_single_script(session, url) for url in script_list]
         results = await asyncio.gather(*tasks)
@@ -330,7 +330,7 @@ class RNGdle:
 
         url = self.api_url.format(username, fetch_size, offset)
         try:
-            async with session.get(url, timeout=30) as response:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(30)) as response:
                 if response.status == 200:
                     result = await response.json()
                 else:
