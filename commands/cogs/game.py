@@ -77,7 +77,7 @@ class Game(commands.Cog):
             u.user = user_data
             u.score = str(user.score)
             u.rank = await UserDao.get_rank(user.user_id, user.guild_id)
-            u.avatar_img = await fetch_base_avatar(user.user)
+            u.avatar_img = await fetch_base_avatar(user_data)
             users.append(u)
 
         generated = await self.leaderboard_generator.generate_leaderboard(users)
