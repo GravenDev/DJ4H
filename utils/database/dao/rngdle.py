@@ -99,7 +99,7 @@ class RNGdleDao:
         Returns True if inserted, False if an identical roll already exists.
         We consider a roll identical if user_id + date + number match an existing row.
         """
-        if await RNGdleDao.roll_exists(roll.user_id, roll.date, roll.number):
+        if await RNGdleDao.roll_exists(roll):
             return False
         session.add(roll)
         return True
