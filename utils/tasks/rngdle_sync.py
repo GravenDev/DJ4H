@@ -82,20 +82,20 @@ async def _process_user(
                     number=roll.number,
                     badge_count=roll.badges,
                 )
-                already_exists = await RNGdleDao.roll_exists(roll_db_entry)
-                if already_exists:
-                    # Update the roll with the new score
-                    rolls_to_update.append(roll_db_entry)
-                    if log_mode == "background":
-                        LOGGER.info(
-                            f"Added in update batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
-                        )
-                else:
+                existing_roll = await RNGdleDao.get_roll(roll_db_entry)
+                if existing_roll is None:
                     # Insert the new roll
                     rolls_to_insert.append(roll_db_entry)
                     if log_mode == "background":
                         LOGGER.info(
                             f"Added in insert batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
+                        )
+                elif existing_roll.score != roll.score:
+                    # Update the roll with the new score
+                    rolls_to_update.append(roll_db_entry)
+                    if log_mode == "background":
+                        LOGGER.info(
+                            f"Added in update batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
                         )
 
             except Exception:

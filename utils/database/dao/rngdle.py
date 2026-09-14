@@ -77,8 +77,8 @@ class RNGdleDao:
         return None
 
     @staticmethod
-    async def roll_exists(roll: RNGdle) -> bool:
-        """Return whether a roll exists. Checks for user_id+date+number in the DB."""
+    async def get_roll(roll: RNGdle) -> RNGdle | None:
+        """Return a roll entry from the DB. Checks for user_id+date+number."""
         async for session in get_db():
             existing = await session.execute(
                 select(RNGdle).filter(
@@ -88,9 +88,13 @@ class RNGdleDao:
                 )
             )
             existing_row = existing.scalars().first()
-            return existing_row is not None
+            return existing_row
+        return None
 
-        return False
+    @staticmethod
+    async def roll_exists(roll: RNGdle) -> bool:
+        """Return whether a roll exists. Checks for user_id+date+number in the DB."""
+        return (await RNGdleDao.get_roll(roll)) is not None
 
     @staticmethod
     async def _upsert(session: AsyncSession, roll: RNGdle) -> bool:
