@@ -27,15 +27,19 @@ def convert_time_to_seconds(time_str: str) -> int:
 
 class Game(commands.Cog):
     def __init__(self, bot: discord.Bot):
-        self.bot = bot
-        self.leaderboard_generator = LeaderboardGenerator()
+        self.bot: discord.Bot = bot
+        self.leaderboard_generator: LeaderboardGenerator = LeaderboardGenerator()
 
-    jd4h = SlashCommandGroup(name="jd4h", description="Commands for the 4h game")
+    jd4h: SlashCommandGroup = SlashCommandGroup(name="jd4h", description="Commands for the 4h game")
 
-    jd4h_admin = SlashCommandGroup(name="jd4h-admin", description="JD4H admin commands")
+    jd4h_admin: SlashCommandGroup = SlashCommandGroup(
+        name="jd4h-admin", description="JD4H admin commands"
+    )
 
     @jd4h.command()
-    async def score(self, ctx, member: discord.Member | None = None) -> None:
+    async def score(
+        self, ctx: discord.ApplicationContext, member: discord.Member | None = None
+    ) -> None:
         """Check your score."""
         if not ctx.guild:
             return
@@ -77,7 +81,7 @@ class Game(commands.Cog):
             u.user = user_data
             u.score = str(user.score)
             u.rank = await UserDao.get_rank(user.user_id, user.guild_id)
-            u.avatar_img = await fetch_base_avatar(user.user)
+            u.avatar_img = await fetch_base_avatar(user_data)
             users.append(u)
 
         generated = await self.leaderboard_generator.generate_leaderboard(users)
@@ -92,7 +96,7 @@ class Game(commands.Cog):
     @discord.default_permissions(administrator=True)
     async def config(
         self,
-        ctx,
+        ctx: discord.ApplicationContext,
         channel: discord.TextChannel,
         delay: discord.Option(str, description="Delay between messages. Ex: 30s, 5m, 4h, 3d"),
     ) -> None:
@@ -123,7 +127,7 @@ class Game(commands.Cog):
 
     @jd4h_admin.command(description="Set a user's score")
     @discord.default_permissions(administrator=True)
-    async def set(self, ctx, member: discord.Member, score: int):
+    async def set(self, ctx: discord.ApplicationContext, member: discord.Member, score: int):
         """Set a user's score."""
         if not ctx.guild:
             await ctx.respond("This command can only be used in a server.")
@@ -142,7 +146,7 @@ class Game(commands.Cog):
 
     @jd4h_admin.command(description="Unset a user's score")
     @discord.default_permissions(administrator=True)
-    async def unset(self, ctx, member: discord.Member):
+    async def unset(self, ctx: discord.ApplicationContext, member: discord.Member):
         """Unset a user's score."""
         if not ctx.guild:
             await ctx.respond("This command can only be used in a server.")

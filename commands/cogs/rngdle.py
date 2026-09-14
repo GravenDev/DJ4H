@@ -21,26 +21,28 @@ from utils.rngdle import RNGdle as RNGdleAPI
 from utils.rngdle import get_score_tier
 from utils.tasks.users_cache_update import get_or_fetch_user
 
+users_data_t = list[dict[str, discord.User | discord.Member | None | str | int]]
+
 
 class LeaderboardPaginator(discord.ui.View):
     def __init__(
         self,
-        users_data,
+        users_data: users_data_t,
         generator,
-        caller_index=None,
-        current_page=0,
-        per_page=10,
-        is_ephemeral=False,
+        caller_index: int | None = None,
+        current_page: int = 0,
+        per_page: int = 10,
+        is_ephemeral: bool = False,
     ):
         super().__init__(timeout=180)
-        self.users_data = users_data
+        self.users_data: users_data_t = users_data
         self.generator = generator
-        self.caller_index = caller_index
-        self.per_page = per_page
-        self.is_ephemeral = is_ephemeral
+        self.caller_index: int | None = caller_index
+        self.per_page: int = per_page
+        self.is_ephemeral: bool = is_ephemeral
 
-        self.max_pages = max(1, (len(self.users_data) + self.per_page - 1) // self.per_page)
-        self.current_page = max(0, min(current_page, self.max_pages - 1))
+        self.max_pages: int = max(1, (len(self.users_data) + self.per_page - 1) // self.per_page)
+        self.current_page: int = max(0, min(current_page, self.max_pages - 1))
 
         self.prev_btn = discord.ui.Button(label="◀ Précédent", style=discord.ButtonStyle.primary)
         self.prev_btn.callback = self.prev_callback
@@ -109,16 +111,20 @@ class LeaderboardPaginator(discord.ui.View):
 
 class RNGdle(commands.Cog):
     def __init__(self, bot: discord.Bot):
-        self.bot = bot
-        self.leaderboard_generator = LeaderboardGenerator()
-        self.profile_generator = ProfileGenerator()
-        self.server_stat_generator = ServerStatGenerator()
-        self.overall_leaderboard_generator = OverallLeaderboardGenerator()
-        self.rngdle_api = RNGdleAPI()
+        self.bot: discord.Bot = bot
+        self.leaderboard_generator: LeaderboardGenerator = LeaderboardGenerator()
+        self.profile_generator: ProfileGenerator = ProfileGenerator()
+        self.server_stat_generator: ServerStatGenerator = ServerStatGenerator()
+        self.overall_leaderboard_generator: OverallLeaderboardGenerator = (
+            OverallLeaderboardGenerator()
+        )
+        self.rngdle_api: RNGdleAPI = RNGdleAPI()
 
-    rng_group = SlashCommandGroup(name="rngdle", description="RNGDLE commands")
+    rng_group: SlashCommandGroup = SlashCommandGroup(name="rngdle", description="RNGDLE commands")
 
-    rngdle_admin = SlashCommandGroup(name="rngdle-admin", description="RNGDLE admin commands")
+    rngdle_admin: SlashCommandGroup = SlashCommandGroup(
+        name="rngdle-admin", description="RNGDLE admin commands"
+    )
 
     @rngdle_admin.command(description="Register/Update an RNGDLE user")
     @discord.default_permissions(administrator=True)
@@ -287,14 +293,14 @@ class RNGdle(commands.Cog):
             return
 
         if not user:
-            db_user = next((u for u in registered_users if u.user_id == ctx.author.id), None)
+            db_user = next((u for u in registered_users if int(u.user_id) == ctx.author.id), None)
             if db_user:
                 rngdle_username = str(db_user.rng_username)
                 target_id = ctx.author.id
                 member = ctx.author
         elif user.startswith("<@") and user.endswith(">"):
             target_id = int(user.strip("<@!>"))
-            db_user = next((u for u in registered_users if u.user_id == target_id), None)
+            db_user = next((u for u in registered_users if int(u.user_id) == target_id), None)
             if db_user:
                 rngdle_username = str(db_user.rng_username)
                 member = ctx.guild.get_member(target_id) or await get_or_fetch_user(
@@ -312,7 +318,7 @@ class RNGdle(commands.Cog):
                     self.bot, target_id
                 )
 
-        if not rngdle_username or not target_id:
+        if not rngdle_username or not target_id or member is None:
             await ctx.respond(
                 "Utilisateur non trouvé ou compte non lié. Utilisez `/rngdle-admin register`.",
                 ephemeral=True,
@@ -416,7 +422,7 @@ class RNGdle(commands.Cog):
             await ctx.respond("Personne n'est enregistré sur ce serveur.")
             return
 
-        user_map = {u.user_id: u.rng_username for u in registered_users}
+        user_map = {int(u.user_id): str(u.rng_username) for u in registered_users}
 
         await rngdle_fetch_with_cooldown()
         rolls = await RNGdleDao.get_guild_rolls(ctx.guild.id)
@@ -440,12 +446,12 @@ class RNGdle(commands.Cog):
             "MYTHIC": 0,
         }
 
-        user_rarity_counts = {}
+        user_rarity_counts: dict[int, dict[str, int]] = {}
 
         for roll in rolls:
-            score = roll.score
-            number = roll.number
-            user_id = roll.user_id
+            score = int(roll.score)
+            number = int(roll.number)
+            user_id = int(roll.user_id)
             username = user_map.get(user_id, "Unknown")
 
             overall_score += score
@@ -480,10 +486,10 @@ class RNGdle(commands.Cog):
                     user_rarity_counts[user_id][tier] += 1
 
         tiers_list = ["TRASH", "COMMON", "UNCOMMON", "RARE", "EPIC", "ANOMALY", "MYTHIC"]
-        tier_kings = {t: [] for t in tiers_list}
+        tier_kings: dict[str, list[tuple[int, int]]] = {t: [] for t in tiers_list}
 
         for tier in tiers_list:
-            tier_users = [
+            tier_users: list[tuple[int, int]] = [
                 (uid, counts[tier])
                 for uid, counts in user_rarity_counts.items()
                 if counts[tier] > 0
@@ -503,7 +509,7 @@ class RNGdle(commands.Cog):
             worst_member = await get_or_fetch_user(self.bot, int(worst_roll["user_id"]))
         worst_roll["member"] = worst_member
 
-        tier_members = {t: [] for t in tiers_list}
+        tier_members: dict[str, list[discord.User]] = {t: [] for t in tiers_list}
         for t, kings in tier_kings.items():
             for uid, count in kings:
                 member = await get_or_fetch_user(self.bot, int(uid))
@@ -549,9 +555,13 @@ class RNGdle(commands.Cog):
             return
 
         registered_users = await RNGdleDao.get_registered_users(ctx.guild.id)
+        if not registered_users:
+            await ctx.respond("Aucun users enregistré sur ce serveur.", ephemeral=True)
+            return
+
         reg_map = {u.user_id: u.rng_username for u in registered_users}
 
-        users_data = []
+        users_data: users_data_t = []
         caller_index = None
         caller_id = ctx.author.id
 
@@ -563,7 +573,7 @@ class RNGdle(commands.Cog):
                 caller_index = i
 
             member = ctx.guild.get_member(user_id) or await get_or_fetch_user(self.bot, user_id)
-            rngdle_username = reg_map.get(user_id, "Unknown")
+            rngdle_username = str(reg_map.get(user_id, "Unknown"))
 
             users_data.append(
                 {
