@@ -6,6 +6,7 @@ import aiohttp
 from discord.ext import tasks
 
 from config import LOGGER, RNGDLE_SYNC_INTERVAL, RNGDLE_TABLE_SYNC_INTERVAL
+from utils.database import RNGdle
 from utils.database.dao.rngdle import RNGdleDao
 from utils.database.schema import RNGdleUser
 from utils.rngdle import (
@@ -69,6 +70,7 @@ async def _process_user(
             return stats
 
         stats["fetched"] += len(rolls)
+        rolls_to_insert: list[RNGdle] = []
         for roll in rolls:
             try:
                 already_exists = await RNGdleDao.roll_exists(
@@ -81,19 +83,21 @@ async def _process_user(
                     )
                 else:
                     # Insert the new roll
-                    inserted = await RNGdleDao.upsert_rngdle(
-                        user_id=int(db_user.user_id),
-                        guild_id=int(db_user.guild_id),
+                    inserted = RNGdle(
+                        user_id=db_user.user_id,
+                        guild_id=db_user.guild_id,
                         date=roll.date,
                         score=roll.score,
                         number=roll.number,
-                        badges=roll.badges,
+                        badge_count=roll.badges,
                     )
+                    rolls_to_insert.append(inserted)
+
                     if inserted:
                         stats["processed"] += 1
                         if log_mode == "background":
                             LOGGER.info(
-                                f"Stored/updated rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
+                                f"Added in batch rngdle for {db_user.rng_username} (user {db_user.user_id}), score {roll.score} at {roll.date} number: {roll.number} badges: {roll.badges}"
                             )
 
             except Exception:
@@ -101,6 +105,10 @@ async def _process_user(
                 LOGGER.error(
                     f"Failed upserting roll for {db_user.rng_username}: {traceback.format_exc()}"
                 )
+        if len(rolls_to_insert) > 0:
+            await RNGdleDao.upsert_batch(rolls_to_insert)
+            if log_mode == "background":
+                LOGGER.info(f"Added {len(rolls_to_insert )} rolls with batch insert")
     except Exception:
         stats["failed"] += 1
         LOGGER.error(f"Failed fetching rolls for {db_user.rng_username}: {traceback.format_exc()}")
