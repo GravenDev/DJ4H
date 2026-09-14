@@ -77,27 +77,24 @@ class RNGdleDao:
         return None
 
     @staticmethod
-    async def roll_exists(user_id: int, date: int, number: int) -> bool:
-        """Return whether a roll exists. Checks for user_id+date+number in the DB."""
+    async def get_roll(roll: RNGdle) -> RNGdle | None:
+        """Return a roll entry from the DB. Checks for user_id+date+number."""
         async for session in get_db():
             existing = await session.execute(
                 select(RNGdle).filter(
-                    RNGdle.user_id == user_id,
-                    RNGdle.date == date,
-                    RNGdle.number == number,
+                    RNGdle.user_id == roll.user_id,
+                    RNGdle.date == roll.date,
+                    RNGdle.number == roll.number,
                 )
             )
             existing_row = existing.scalars().first()
-            return existing_row is not None
-
-        return False
+            return existing_row
+        return None
 
     @staticmethod
-    async def upsert_batch(rolls: list[RNGdle]):
-        async for session in get_db():
-            for roll in rolls:
-                await RNGdleDao._upsert(session, roll)
-            await session.commit()
+    async def roll_exists(roll: RNGdle) -> bool:
+        """Return whether a roll exists. Checks for user_id+date+number in the DB."""
+        return (await RNGdleDao.get_roll(roll)) is not None
 
     @staticmethod
     async def _upsert(session: AsyncSession, roll: RNGdle) -> bool:
@@ -106,10 +103,19 @@ class RNGdleDao:
         Returns True if inserted, False if an identical roll already exists.
         We consider a roll identical if user_id + date + number match an existing row.
         """
-        if await RNGdleDao.roll_exists(roll.user_id, roll.date, roll.number):
+        if await RNGdleDao.roll_exists(roll):
             return False
         session.add(roll)
         return True
+
+    @staticmethod
+    async def upsert_batch(rolls: list[RNGdle]) -> int:
+        inserted = 0
+        async for session in get_db():
+            for roll in rolls:
+                inserted += await RNGdleDao._upsert(session, roll)
+            await session.commit()
+        return inserted
 
     @staticmethod
     async def upsert_single(roll: RNGdle):
@@ -118,29 +124,45 @@ class RNGdleDao:
             await session.commit()
 
     @staticmethod
-    async def update_roll(
-        user_id: int,
-        date: int,
-        score: int,
-        number: int,
-        badges: int,
-    ) -> None:
-        """Update an existing roll searched by user_id+date+number with new score and badge count."""
+    async def _update(session: AsyncSession, roll: RNGdle) -> bool:
+        """Internal method to update an existing roll searched by user_id+date+number with new score and badge count. Does not commit the operation to the DB."""
         async for session in get_db():
             existing = await session.execute(
                 select(RNGdle).filter(
-                    RNGdle.user_id == user_id,
-                    RNGdle.date == date,
-                    RNGdle.number == number,
+                    RNGdle.user_id == roll.user_id,
+                    RNGdle.date == roll.date,
+                    RNGdle.number == roll.number,
                 )
             )
             existing_row = existing.scalars().first()
             if existing_row is None:
                 raise ValueError("tried to update a row that doesn't exist")
 
-            existing_row.score = score
-            existing_row.badge_count = badges
+            existing_row.score = roll.score
+            existing_row.badge_count = roll.badge_count
+
+        return True
+
+    @staticmethod
+    async def update_single(roll: RNGdle) -> bool:
+        """Update an existing roll searched by user_id+date+number with new score and badge count."""
+        async for session in get_db():
+            updated = await RNGdleDao._update(session, roll)
+            if not updated:
+                raise ValueError("Could not update roll")
             await session.commit()
+            return True
+        return False
+
+    @staticmethod
+    async def update_batch(rolls: Sequence[RNGdle]) -> int:
+        """Update existing rolls searched by user_id+date+number with new score and badge count."""
+        updated = 0
+        async for session in get_db():
+            for roll in rolls:
+                updated += await RNGdleDao._update(session, roll)
+            await session.commit()
+        return updated
 
     @staticmethod
     async def get_today_scores(

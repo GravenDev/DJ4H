@@ -207,7 +207,8 @@ class RNGdle(commands.Cog):
         else:
             description = (
                 f"Refreshed **{result['users_count']}** registered users:\n"
-                f"✅ Stored: **{result['processed']}** rolls\n"
+                f"✅ Stored: **{result['inserted']}** rolls\n"
+                f"✅ Updated: **{result['updated']}** rolls\n"
                 f"❌ Failed: **{result['failed']}** rolls"
             )
             message = discord.Embed(
