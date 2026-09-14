@@ -44,7 +44,7 @@ class RNGdleDao:
 
             if existing_row is not None:
                 # Update the username if it changed
-                if existing_row.rng_username != username:
+                if str(existing_row.rng_username) != username:
                     existing_row.rng_username = username
                     session.add(existing_row)
                     await session.commit()

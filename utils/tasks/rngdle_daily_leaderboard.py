@@ -26,18 +26,18 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         if config.leaderboard_channel_id is None:
             continue
 
-        guild = bot.get_guild(config.guild_id)
+        guild = bot.get_guild(int(config.guild_id))
         if guild is None:
             continue
 
-        channel = guild.get_channel(config.leaderboard_channel_id)
+        channel = guild.get_channel(int(config.leaderboard_channel_id))
         if channel is None or not isinstance(channel, discord.TextChannel):
             continue
 
         await rngdle_fetch_task()
 
         start_ts, end_ts = get_yesterday_range()
-        scores = await RNGdleDao.get_scores_in_range(config.guild_id, start_ts, end_ts)
+        scores = await RNGdleDao.get_scores_in_range(int(config.guild_id), start_ts, end_ts)
 
         if not scores:
             continue
@@ -67,7 +67,9 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
 
         top_score = scores[0].score
         top_users = [
-            leaderboard_users[i].user for i, score in enumerate(scores) if score.score == top_score
+            leaderboard_users[i].user
+            for i, score in enumerate(scores)
+            if int(score.score) == top_score
         ]
         mentions = " ".join(
             u.mention if u.id != 610843701861679108 else "TnTube" for u in top_users

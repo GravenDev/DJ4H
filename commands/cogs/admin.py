@@ -8,14 +8,16 @@ from config import LOGGER
 
 
 class Admin(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: discord.Bot):
+        self.bot: discord.Bot = bot
 
-    admin = SlashCommandGroup(name="admin", description="General bot admin commands")
+    admin: SlashCommandGroup = SlashCommandGroup(
+        name="admin", description="General bot admin commands"
+    )
 
     @admin.command(description="Dump the bot's log")
     @discord.default_permissions(administrator=True)
-    async def dump_log(self, ctx):
+    async def dump_log(self, ctx: discord.ApplicationContext):
         """Dump the bot's log."""
         if not ctx.guild:
             await ctx.respond("This command can only be used in a server.")
@@ -34,6 +36,6 @@ class Admin(commands.Cog):
             )
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     bot.add_cog(Admin(bot))
     LOGGER.info("Admin cog loaded.")
