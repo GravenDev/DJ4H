@@ -58,6 +58,36 @@ class RNGdleDao:
             return
 
     @staticmethod
+    async def delete_user(user_id: int, guild_id: int) -> bool:
+        async for session in get_db():
+            # Delete users with matching ids
+            matching_users = await session.execute(
+                select(RNGdleUser).filter(
+                    RNGdleUser.user_id == user_id,
+                    RNGdleUser.guild_id == guild_id,
+                )
+            )
+            if not matching_users.scalars().all():
+                return False
+
+            await session.execute(
+                delete(RNGdleUser).filter(
+                    RNGdleUser.user_id == user_id,
+                    RNGdleUser.guild_id == guild_id,
+                )
+            )
+            # Delete the user's rolls
+            await session.execute(
+                delete(RNGdle).filter(
+                    RNGdle.user_id == user_id,
+                    RNGdle.guild_id == guild_id,
+                )
+            )
+            await session.commit()
+            return True
+        return False
+
+    @staticmethod
     async def get_registered_users(
         guild_id: int,
     ) -> Sequence[RNGdleUser] | None:
