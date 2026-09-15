@@ -66,11 +66,10 @@ async def rngdle_daily_leaderboard_task(bot: discord.Bot) -> None:
         file = discord.File(fp=buffer, filename="leaderboard.png")
 
         top_score = scores[0].score
-        top_users = [
-            leaderboard_users[i].user
-            for i, score in enumerate(scores)
-            if int(score.score) == top_score
-        ]
+        top_users_ids = {
+            int(score_col.user_id) for score_col in scores if int(score_col.score) == top_score
+        }
+        top_users = [user.user for user in leaderboard_users if user.user.id in top_users_ids]
         mentions = " ".join(
             u.mention if u.id != 610843701861679108 else "TnTube" for u in top_users
         )
