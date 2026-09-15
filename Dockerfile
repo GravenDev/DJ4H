@@ -1,26 +1,22 @@
+# syntax=docker/dockerfile:1
 FROM python:3.13-slim
 
-# Update the system
-RUN apt update && apt upgrade -y
-
-# Install the required packages
-RUN apt install -y --no-install-recommends gcc && apt clean
+ARG TARGETPLATFORM
 
 # Install poetry
-RUN pip install poetry==2.2.1
+RUN pip install --no-cache-dir poetry==2.2.1
 
 WORKDIR /app
 
+# Install the dependencies first, so this layer is only rebuilt when the lockfile changes
+COPY pyproject.toml poetry.lock poetry.toml /app/
+
+RUN --mount=type=cache,target=/root/.cache/pypoetry,id=poetry-${TARGETPLATFORM},sharing=locked \
+    poetry install --without dev
+
 COPY ./ /app
 
-RUN sed -i 's/\r$//' entrypoint.sh
-
-# Disable in-project venvs
-RUN poetry config virtualenvs.in-project false
-
-RUN poetry install --without dev
-
-RUN chmod +x entrypoint.sh
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
 # Run the application
 CMD ["/app/entrypoint.sh"]
