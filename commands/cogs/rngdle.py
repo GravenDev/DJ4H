@@ -144,6 +144,26 @@ class RNGdle(commands.Cog):
         )
         await ctx.respond(embed=message)
 
+    @rngdle_admin.command(description="Delete an RNGDLE user (unregister it and purge its rolls)")
+    @discord.default_permissions(administrator=True)
+    async def delete(
+        self,
+        ctx: discord.ApplicationContext,
+        discord_user: discord.Member,
+    ) -> None:
+        """Delete an RNGDLE user."""
+        await ctx.defer()
+        deleted = await RNGdleDao.delete_user(discord_user.id, ctx.guild.id)
+        if deleted:
+            description = f"RNGDLE user linked to <@{discord_user.id}> was deleted successfully!"
+        else:
+            description = f"Failed to delete RNGDLE user given discord user <@{discord_user.id}>."
+
+        message = discord.Embed(
+            title="RNGDLE deleted user", color=discord.Colour(MAGIC_COLOR), description=description
+        )
+        await ctx.respond(embed=message)
+
     @rngdle_admin.command(description="Show registered RNGDLE users")
     @discord.default_permissions(administrator=True)
     async def show(self, ctx: discord.ApplicationContext) -> None:
