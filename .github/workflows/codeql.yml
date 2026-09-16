@@ -27,7 +27,15 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: none
-          queries: security-and-quality
+          config: |
+            queries:
+              - uses: security-and-quality
+            # Alembic migrations declare `revision` / `down_revision` /
+            # `branch_labels` / `depends_on`, which Alembic reads by
+            # introspection and never from the module itself. CodeQL sees
+            # them as dead code and reports py/unused-global-variable.
+            paths-ignore:
+              - alembic/versions
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
