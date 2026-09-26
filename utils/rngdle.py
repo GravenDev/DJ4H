@@ -286,7 +286,7 @@ def get_tier_color(tier: Tier):
 
 def get_score_percent(score: int):
     # Find the index to the highest know score that is lower than given score
-    score_idx = bisect.bisect_left(KNOWN_COMPRESSED_SCORES, score) - 1
+    score_idx = bisect.bisect_right(KNOWN_COMPRESSED_SCORES, score) - 1
     score_idx = max(score_idx, 0)
     percent_score = KNOWN_COMPRESSED_SCORES[score_idx]
     # Return it's percent
@@ -377,6 +377,12 @@ if __name__ == "__main__":
         action="store_true",
     )
 
+    arg_parser.add_argument(
+        "--get-score-info",
+        help="Give an overview of informations that can be deduced from the given score",
+        type=int,
+    )
+
     args = arg_parser.parse_args()
 
     if args.compress_score_table:
@@ -385,4 +391,8 @@ if __name__ == "__main__":
         store_compressed_score_to_percent_table(compressed_score_to_percent)
 
     if args.update_score_table:
-        update_compressed_score_to_percent_table()
+        asyncio.run(update_compressed_score_to_percent_table())
+
+    if args.get_score_info is not None:
+        score = typing.cast(int, args.get_score_info)
+        print(f"Score: {score}, Tier: {get_score_tier(score)}, Percent: {get_score_percent(score)}")
