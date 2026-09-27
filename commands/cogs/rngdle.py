@@ -21,7 +21,7 @@ from utils.rngdle import RNGdle as RNGdleAPI
 from utils.rngdle import get_score_tier
 from utils.tasks.users_cache_update import get_or_fetch_user
 
-users_data_t = list[dict[str, discord.User | discord.Member | None | str | int]]
+users_data_t = list[dict[str, discord.User | None | str | int]]
 
 
 class LeaderboardPaginator(discord.ui.View):
@@ -324,9 +324,7 @@ class RNGdle(commands.Cog):
             db_user = next((u for u in registered_users if int(u.user_id) == target_id), None)
             if db_user:
                 rngdle_username = str(db_user.rng_username)
-                member = ctx.guild.get_member(target_id) or await get_or_fetch_user(
-                    self.bot, target_id
-                )
+                member = await get_or_fetch_user(self.bot, target_id)
         else:
             rngdle_username = user
             db_user = next(
@@ -335,9 +333,7 @@ class RNGdle(commands.Cog):
             )
             if db_user:
                 target_id = int(db_user.user_id)
-                member = ctx.guild.get_member(target_id) or await get_or_fetch_user(
-                    self.bot, target_id
-                )
+                member = await get_or_fetch_user(self.bot, target_id)
 
         if not rngdle_username or not target_id or member is None:
             await ctx.respond(
@@ -593,7 +589,7 @@ class RNGdle(commands.Cog):
             if user_id == caller_id:
                 caller_index = i
 
-            member = ctx.guild.get_member(user_id) or await get_or_fetch_user(self.bot, user_id)
+            member = await get_or_fetch_user(self.bot, user_id)
             rngdle_username = str(reg_map.get(user_id, "Unknown"))
 
             users_data.append(

@@ -11,11 +11,8 @@ from utils.tasks.users_cache_update import init_user_cache, user_cache_sync_task
 
 setup_logging()
 
-intents = discord.Intents.default()
-intents.members = True
-
 bot = discord.AutoShardedBot(
-    intents=intents,
+    intents=discord.Intents.default(),
     help_command=None,  # Disable the default help command
     debug_guilds=[DEBUG_GUILD_ID] if DEBUG_GUILD_ID else None,
 )
