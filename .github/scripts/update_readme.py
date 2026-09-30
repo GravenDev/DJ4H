@@ -58,10 +58,8 @@ def get_contributors():
 
 
 def generate_contributors(contributors):
-    """Generate the Markdown for the collaborators."""
-    contributors.sort(
-        key=lambda user: user["login"].lower()
-    )
+    """Generate the Markdown for the contributors."""
+    contributors.sort(key=lambda user: user["login"].lower())
 
     entries = []
 
@@ -74,7 +72,7 @@ def generate_contributors(contributors):
             f'<img src="{avatar_url}" '
             f'alt="{login}" '
             f'width="25"/> '
-            f'[{login}]({profile_url})'
+            f"[{login}]({profile_url})"
         )
 
     return ", ".join(entries)
@@ -100,11 +98,7 @@ def get_latest_tag():
         check=True,
     )
 
-    tags = [
-        tag.strip()
-        for tag in result.stdout.splitlines()
-        if tag.strip()
-    ]
+    tags = [tag.strip() for tag in result.stdout.splitlines() if tag.strip()]
 
     if not tags:
         raise RuntimeError("No Git tags found.")
@@ -113,24 +107,16 @@ def get_latest_tag():
 
 
 def replace_section(
-        content: str,
-        start_marker: str,
-        end_marker: str,
-        replacement: str,
+    content: str,
+    start_marker: str,
+    end_marker: str,
+    replacement: str,
 ):
     """Replace the content between two README markers."""
 
-    pattern = (
-            re.escape(start_marker)
-            + r".*?"
-            + re.escape(end_marker)
-    )
+    pattern = re.escape(start_marker) + r".*?" + re.escape(end_marker)
 
-    replacement_text = (
-        f"{start_marker} "
-        f"{replacement} "
-        f"{end_marker}"
-    )
+    replacement_text = f"{start_marker} {replacement} {end_marker}"
 
     updated, count = re.subn(
         pattern,
@@ -142,10 +128,7 @@ def replace_section(
 
     if count != 1:
         raise RuntimeError(
-            f"Could not find README markers:\n"
-            f"{start_marker}\n"
-            f"...\n"
-            f"{end_marker}"
+            f"Could not find README markers:\n" f"{start_marker}\n" f"...\n" f"{end_marker}"
         )
 
     return updated
@@ -185,9 +168,7 @@ def main():
         encoding="utf-8",
     )
 
-    print(
-        f"Found {len(contributors_data)} contributors."
-    )
+    print(f"Found {len(contributors_data)} contributors.")
     print(f"Latest tag: {latest_tag}")
 
 
