@@ -14,7 +14,7 @@ setup_logging()
 bot = discord.AutoShardedBot(
     intents=discord.Intents.default(),
     help_command=None,  # Disable the default help command
-    debug_guilds=[DEBUG_GUILD_ID] if DEBUG_GUILD_ID else None,
+    debug_guilds=DEBUG_GUILD_ID if DEBUG_GUILD_ID else None,
 )
 
 

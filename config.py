@@ -11,10 +11,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 env_debug_guild_id = os.getenv("DEBUG_GUILD_ID", None)
 try:
-    DEBUG_GUILD_ID = int(env_debug_guild_id) if env_debug_guild_id is not None else 0
+    DEBUG_GUILD_ID = [int(env_debug_guild_id)] if env_debug_guild_id is not None else 0
 except ValueError:
     raise ValueError("DEBUG_GUILD_ID must be an integer representing a guild ID.")
-
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "dj4h.db")
 MAGIC_COLOR = 5220337
