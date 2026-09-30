@@ -64,6 +64,8 @@ def generate_contributors(contributors):
     entries = []
 
     for user in contributors:
+        if user.get("type") == "Bot":
+            continue
         login = user["login"].capitalize()
         avatar_url = user["avatar_url"]
         profile_url = user["html_url"]
