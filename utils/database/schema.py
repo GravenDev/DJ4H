@@ -24,7 +24,7 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(BigInteger, primary_key=True, nullable=False)
-    guild_id = Column(BigInteger, nullable=False)
+    guild_id = Column(BigInteger, primary_key=True, nullable=False)
     score = Column(BigInteger, nullable=False)
 
 

@@ -1,0 +1,52 @@
+name: Update README metadata
+
+on:
+  push:
+    tags:
+      - "*"
+  
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Fetch all tags
+        run: git fetch --tags --force
+      
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      
+      - name: Update README
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python .github/scripts/update_readme.py
+      
+      - name: Commit README changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          git add README.md
+          
+          if git diff --cached --quiet; then
+            echo "README is already up to date."
+            exit 0
+          fi
+          
+          git commit -m "docs: update README metadata"
+          
+          git push origin HEAD:${{ github.event.repository.default_branch }}

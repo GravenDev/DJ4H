@@ -1,5 +1,5 @@
 <h3 align="center">
-  <img src="https://avatars.githubusercontent.com/u/78621926?s=200&v=4" width="75"><br/>
+  <img alt="Image showing Graven development discord logo" src="https://avatars.githubusercontent.com/u/78621926?s=200&v=4" width="75"><br/>
   DJ4H <br/>
   This project is under the <a href="https://choosealicense.com/licenses/gpl-3.0/">GNU GPL v3</a> license<br/><br/>
 </h3>
@@ -17,11 +17,11 @@ Most of the contributors are part of the staff but the members are also allowed 
 
 ## Global information
 
-| Global information |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Description        | DJ4H is a Discord bot designed to enhance server engagement. It includes features for tracking activity engagement, providing a dynamic and interactive experience for communities.                                                                                                                                                                                                                                                                                                                                          |
-| Collaborators      | <img src="https://avatars.githubusercontent.com/u/73261020?v=4" alt="drawing" width="25"/> [Gamingdy](https://github.com/Gamingdy),  <img src="https://avatars.githubusercontent.com/u/34105327?s=64&v=4" alt="drawing" width="25"/> [Lindwen](https://github.com/Lindwen), <img src="https://avatars.githubusercontent.com/u/1571189?s=64&v=4" alt="drawing" width="25"/> [Loïc R](https://github.com/Lramelot),  <img src="https://avatars.githubusercontent.com/u/69684024?s=64&v=4" alt="drawing" width="25"/> [GabHas](https://github.com/TheRealGabHas), <img src="https://avatars.githubusercontent.com/u/26577763?s=64&v=4" alt="drawing" width="25"/> [AntoineJT](https://github.com/AntoineJT) |
-| Version            | 1.0.0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Global information |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Description        | DJ4H is a Discord bot designed to enhance server engagement. It includes features for tracking activity engagement, providing a dynamic and interactive experience for communities.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Contributors       | <!-- CONTRIBUTORS:START --> <img src="https://avatars.githubusercontent.com/u/44125445?v=4" alt="Alessevan" width="25"/> [Alessevan](https://github.com/Alessevan), <img src="https://avatars.githubusercontent.com/u/185201144?v=4" alt="Alexandre-josepavel" width="25"/> [Alexandre-josepavel](https://github.com/alexandre-josepavel), <img src="https://avatars.githubusercontent.com/u/26577763?v=4" alt="Antoinejt" width="25"/> [Antoinejt](https://github.com/AntoineJT), <img src="https://avatars.githubusercontent.com/u/74816698?v=4" alt="Flenderrax" width="25"/> [Flenderrax](https://github.com/FlenderrAX), <img src="https://avatars.githubusercontent.com/u/73261020?v=4" alt="Gamingdy" width="25"/> [Gamingdy](https://github.com/gamingdy), <img src="https://avatars.githubusercontent.com/u/34105327?v=4" alt="Lindwen" width="25"/> [Lindwen](https://github.com/Lindwen), <img src="https://avatars.githubusercontent.com/u/1571189?v=4" alt="Lramelot" width="25"/> [Lramelot](https://github.com/Lramelot), <img src="https://avatars.githubusercontent.com/u/84503460?v=4" alt="Mityno" width="25"/> [Mityno](https://github.com/Mityno), <img src="https://avatars.githubusercontent.com/u/44524788?v=4" alt="Redstom" width="25"/> [Redstom](https://github.com/RedsTom), <img src="https://avatars.githubusercontent.com/u/69684024?v=4" alt="Therealgabhas" width="25"/> [Therealgabhas](https://github.com/TheRealGabHas) <!-- CONTRIBUTORS:END --> |
+| Version            | <!-- VERSION:START --> v1.5.5 <!-- VERSION:END -->                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ---
 
@@ -59,18 +59,18 @@ Required command parameters are shown in brackets (`[required]`) while optional 
 
 ### Configuration (Admin only)
 
-| Command | Description |
-| --- | --- |
+| Command                     | Description                                                                                                                          |
+|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `/config [channel] [delay]` | Sets the game channel and the required delay to score a point. Time prefixes: `s` (seconds), `m` (minutes), `h` (hours), `d` (days). |
-| `/set [member] [score]` | Sets a member's score to the specified value. |
-| `/dump_log` | Retrieves the bot's log file. |
+| `/set [member] [score]`     | Sets a member's score to the specified value.                                                                                        |
+| `/dump_log`                 | Retrieves the bot's log file.                                                                                                        |
 
 ### Player
 
-| Command | Description |
-| --- | --- |
+| Command        | Description                                |
+|----------------|--------------------------------------------|
 | `/leaderboard` | Displays an image with the top 10 players. |
-| `/score` | Shows your own score. |
+| `/score`       | Shows your own score.                      |
 
 ## Installation
 
@@ -97,7 +97,8 @@ Required command parameters are shown in brackets (`[required]`) while optional 
 cp .env.example .env
 ```
 
-Then fill in `BOT_TOKEN`. Every variable is documented in `.env.example`; the commented-out ones are optional and show their default value.
+Then fill in `BOT_TOKEN`. Every variable is documented in `.env.example`; the commented-out ones are optional and show
+their default value.
 
 ## Usage
 
@@ -116,6 +117,7 @@ docker compose -f compose.prod.yaml up -d
 ```
 
 Make a deployment
+
 ```bash
 # clone repository
 git checkout master
@@ -148,7 +150,7 @@ DJ4H/
 ├── config.py                  # Configuration and logging
 ├── commands/                  # Discord commands
 │   ├── cogs/game.py          # /leaderboard and /score commands
-��   └── handler/events.py     # Main game logic
+│   └── handler/events.py     # Main game logic
 ├── utils/
 │   ├── database/             # Database layer
 │   │   ├── connection.py     # SQLite connection
